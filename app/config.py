@@ -22,7 +22,8 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
 
 class ProductionConfig(Config):
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    # Inherit SECRET_KEY from Config if not set
+    SECRET_KEY = os.environ.get('SECRET_KEY') or Config.SECRET_KEY
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
