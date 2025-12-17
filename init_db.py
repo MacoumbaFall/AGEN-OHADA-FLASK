@@ -9,9 +9,10 @@ def init_db():
     app = create_app()
     
     with app.app_context():
-        # Create schema if not exists (redundant if using migrations, but safe)
-        # In production, usually 'flask db upgrade' is preferred, but this ensures tables exist
-        # db.create_all() 
+        # Force create all tables (safe - won't drop existing tables)
+        print("Creating database tables...")
+        db.create_all()
+        print("Tables created/verified.")
         
         # Check/Create Admin User
         admin = db.session.scalar(db.select(User).where(User.username == 'admin'))
