@@ -1,0 +1,19 @@
+
+@bp.route('/clients/<int:id>/delete', methods=['POST'])
+@login_required
+def delete(id):
+    client = db.session.get(Client, id)
+    if not client:
+        flash('Client non trouvé.', 'error')
+        return redirect(url_for('clients.index'))
+    
+    # Optional: Check if client has important related data before deleting? 
+    # SQLAlchemy cascade might handle it, but for safety in a notary app, we might want to restrict if dossiers exist.
+    if client.dossier_participations:
+         flash('Impossible de supprimer ce client car il est lié à des dossiers existants.', 'error')
+         return redirect(url_for('clients.view', id=id))
+
+    db.session.delete(client)
+    db.session.commit()
+    flash('Client supprimé avec succès.', 'success')
+    return redirect(url_for('clients.index'))

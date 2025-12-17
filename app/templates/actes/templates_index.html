@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="md:flex md:items-center md:justify-between mb-8">
+    <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">Modèles d'Actes
+        </h2>
+    </div>
+    <div class="mt-4 flex md:ml-4 md:mt-0">
+        <a href="{{ url_for('actes.generate') }}"
+            class="mr-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Générer un Acte
+        </a>
+        <a href="{{ url_for('actes.template_create') }}"
+            class="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            Nouveau Modèle
+        </a>
+    </div>
+</div>
+
+<div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
+    <table class="min-w-full divide-y divide-gray-300">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nom</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Description</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Actions</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+            {% for template in templates %}
+            <tr>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ template.nom
+                    }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ template.type_acte }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ template.description or '' }}</td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <a href="{{ url_for('actes.template_edit', id=template.id) }}"
+                        class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                    <form action="{{ url_for('actes.template_delete', id=template.id) }}" method="post"
+                        class="inline ml-2" onsubmit="return confirm('Êtes-vous sûr ?');">
+                        <button type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="py-4 text-center text-sm text-gray-500">Aucun modèle trouvé.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

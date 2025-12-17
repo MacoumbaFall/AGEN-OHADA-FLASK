@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="sm:flex sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Balance Générale</h1>
+                <p class="mt-2 text-sm text-gray-700">État des soldes de tous les comptes au {{
+                    date_fin.strftime('%d/%m/%Y') }}</p>
+            </div>
+            <div class="mt-4 sm:mt-0">
+                <button onclick="window.print()"
+                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="mb-6 bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-lg p-4">
+        <form method="GET" action="{{ url_for('comptabilite.reports_balance') }}" class="flex items-end gap-4">
+            <div class="flex-1">
+                <label for="date_fin" class="block text-sm font-medium text-gray-700 mb-2">Date de fin</label>
+                <input type="date" name="date_fin" id="date_fin" value="{{ date_fin.strftime('%Y-%m-%d') }}"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+            <button type="submit"
+                class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                Actualiser
+            </button>
+        </form>
+    </div>
+
+    <!-- Balance Table -->
+    <div id="printable-balance" class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-lg overflow-hidden">
+        {% if balance %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            N° Compte</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Libellé</th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Catégorie
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Débit</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Crédit</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for item in balance %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {{ item.numero_compte }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">{{ item.libelle }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            {% if item.categorie == 'OFFICE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                Office
+                            </span>
+                            {% elif item.categorie == 'CLIENT' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Client
+                            </span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
+                            {{ "{:,.0f}".format(item.debit) if item.debit > 0 else '-' }}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
+                            {{ "{:,.0f}".format(item.credit) if item.credit > 0 else '-' }}
+                        </td>
+                        <td
+                            class="whitespace-nowrap px-3 py-4 text-sm text-right font-semibold
+                            {% if item.solde > 0 %}text-green-600{% elif item.solde < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ "{:,.0f}".format(item.solde) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-gray-50">
+                    <tr class="border-t-2 border-gray-900">
+                        <th scope="row" colspan="3"
+                            class="py-4 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            TOTAUX
+                        </th>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-900">
+                            {{ "{:,.0f}".format(total_debit) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-900">
+                            {{ "{:,.0f}".format(total_credit) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                            {% if total_debit == total_credit %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                ✓ Équilibrée
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                                ✗ Déséquilibrée
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-semibold text-gray-900">Aucune donnée</h3>
+            <p class="mt-1 text-sm text-gray-500">Aucun compte avec solde pour la période sélectionnée.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-6 rounded-md bg-blue-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    La balance générale présente l'état des soldes de tous les comptes à une date donnée.
+                    En comptabilité en partie double, le total des débits doit toujours être égal au total des crédits.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #printable-balance,
+        #printable-balance * {
+            visibility: visible;
+        }
+
+        #printable-balance {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

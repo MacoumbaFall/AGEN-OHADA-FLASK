@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Plan Comptable</h1>
+            <p class="mt-2 text-sm text-gray-700">Liste de tous les comptes comptables</p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex gap-3">
+            <form method="POST" action="{{ url_for('comptabilite.init_accounts') }}" class="inline">
+                <button type="submit"
+                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Initialiser
+                </button>
+            </form>
+            <a href="{{ url_for('comptabilite.comptes_create') }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nouveau Compte
+            </a>
+        </div>
+    </div>
+
+    <!-- Office Accounts -->
+    <div class="mb-8">
+        <div class="mb-4 flex items-center">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="ml-3 text-lg font-semibold text-gray-900">Comptes Office</h2>
+            <span
+                class="ml-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                {{ comptes_office|length }}
+            </span>
+        </div>
+
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            N° Compte</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Libellé</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde</th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Statut</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for compte in comptes_office %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {{ compte.numero_compte }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">{{ compte.libelle }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ compte.type_compte }}</td>
+                        <td
+                            class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium
+                            {% if compte.get_solde() > 0 %}text-green-600{% elif compte.get_solde() < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ "{:,.0f}".format(compte.get_solde()) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            {% if compte.actif %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Actif
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                Inactif
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Client Accounts -->
+    <div class="mb-8">
+        <div class="mb-4 flex items-center">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="ml-3 text-lg font-semibold text-gray-900">Comptes Client (Fonds de Tiers)</h2>
+            <span
+                class="ml-2 inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                {{ comptes_client|length }}
+            </span>
+        </div>
+
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            N° Compte</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Libellé</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde</th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Statut</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for compte in comptes_client %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {{ compte.numero_compte }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">{{ compte.libelle }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ compte.type_compte }}</td>
+                        <td
+                            class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium
+                            {% if compte.get_solde() > 0 %}text-green-600{% elif compte.get_solde() < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ "{:,.0f}".format(compte.get_solde()) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            {% if compte.actif %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Actif
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                Inactif
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Other Accounts -->
+    {% if comptes_autres %}
+    <div>
+        <div class="mb-4 flex items-center">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="ml-3 text-lg font-semibold text-gray-900">Autres Comptes</h2>
+            <span
+                class="ml-2 inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600">
+                {{ comptes_autres|length }}
+            </span>
+        </div>
+
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            N° Compte</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Libellé</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde</th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Statut</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for compte in comptes_autres %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {{ compte.numero_compte }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">{{ compte.libelle }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ compte.type_compte }}</td>
+                        <td
+                            class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium
+                            {% if compte.get_solde() > 0 %}text-green-600{% elif compte.get_solde() < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ "{:,.0f}".format(compte.get_solde()) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            {% if compte.actif %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Actif
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                Inactif
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

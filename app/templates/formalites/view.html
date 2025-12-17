@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header with Actions -->
+    <div class="mb-8">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li>
+                    <a href="{{ url_for('formalites.index') }}" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Formalités</span>
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="ml-4 text-sm font-medium text-gray-500">Formalité #{{ formalite.id }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="sm:flex sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ formalite.type_formalite }}</h1>
+                <p class="mt-2 text-sm text-gray-700">
+                    Dossier: <a href="{{ url_for('dossiers.view', id=formalite.dossier_id) }}"
+                        class="font-medium text-indigo-600 hover:text-indigo-500">{{ formalite.dossier.numero_dossier
+                        }}</a>
+                </p>
+            </div>
+            <div class="mt-4 sm:mt-0 flex gap-3">
+                <a href="{{ url_for('formalites.edit', id=formalite.id) }}"
+                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modifier
+                </a>
+                <form method="POST" action="{{ url_for('formalites.delete', id=formalite.id) }}" class="inline"
+                    onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette formalité ?');">
+                    <button type="submit"
+                        class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+                        <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Main Information Card -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Status Card -->
+            <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Statut et Progression</h3>
+
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            {% if formalite.statut == 'A_FAIRE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-yellow-50 px-3 py-2 text-sm font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                À Faire
+                            </span>
+                            {% elif formalite.statut == 'EN_COURS' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                En Cours
+                            </span>
+                            {% elif formalite.statut == 'DEPOSE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                Déposé
+                            </span>
+                            {% elif formalite.statut == 'TERMINE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-3 py-2 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Terminé
+                            </span>
+                            {% elif formalite.statut == 'ANNULE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                                Annulé
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Quick Status Update -->
+                        <div class="relative inline-block text-left">
+                            <button type="button" onclick="toggleStatusMenu()"
+                                class="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                                Changer le statut
+                                <svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div id="status-menu"
+                                class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+                                <div class="py-1">
+                                    <form method="POST"
+                                        action="{{ url_for('formalites.update_status', id=formalite.id) }}">
+                                        <button type="submit" name="statut" value="A_FAIRE"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">À
+                                            Faire</button>
+                                        <button type="submit" name="statut" value="EN_COURS"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">En
+                                            Cours</button>
+                                        <button type="submit" name="statut" value="DEPOSE"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Déposé</button>
+                                        <button type="submit" name="statut" value="TERMINE"
+                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Terminé</button>
+                                        <button type="submit" name="statut" value="ANNULE"
+                                            class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100">Annulé</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Timeline -->
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                            <span>Progression</span>
+                            <span>
+                                {% if formalite.statut == 'TERMINE' %}100%
+                                {% elif formalite.statut == 'DEPOSE' %}75%
+                                {% elif formalite.statut == 'EN_COURS' %}50%
+                                {% elif formalite.statut == 'A_FAIRE' %}25%
+                                {% else %}0%{% endif %}
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full 
+                                {% if formalite.statut == 'TERMINE' %}bg-green-600 w-full
+                                {% elif formalite.statut == 'DEPOSE' %}bg-purple-600 w-3/4
+                                {% elif formalite.statut == 'EN_COURS' %}bg-blue-600 w-1/2
+                                {% elif formalite.statut == 'A_FAIRE' %}bg-yellow-600 w-1/4
+                                {% else %}bg-gray-400 w-0{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Card -->
+            <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Informations Détaillées</h3>
+
+                    <dl class="divide-y divide-gray-100">
+                        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                            <dt class="text-sm font-medium leading-6 text-gray-900">Dossier</dt>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                <a href="{{ url_for('dossiers.view', id=formalite.dossier_id) }}"
+                                    class="font-medium text-indigo-600 hover:text-indigo-500">
+                                    {{ formalite.dossier.numero_dossier }}
+                                </a>
+                                <div class="text-gray-500 mt-1">{{ formalite.dossier.intitule }}</div>
+                            </dd>
+                        </div>
+
+                        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                            <dt class="text-sm font-medium leading-6 text-gray-900">Type de formalité</dt>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                <span
+                                    class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                    {{ formalite.type_formalite }}
+                                </span>
+                            </dd>
+                        </div>
+
+                        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                            <dt class="text-sm font-medium leading-6 text-gray-900">Date de dépôt</dt>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                {{ formalite.date_depot.strftime('%d/%m/%Y') if formalite.date_depot else 'Non définie'
+                                }}
+                                {% if jours_ecoules is not none and jours_ecoules >= 0 %}
+                                <span class="text-gray-500">(il y a {{ jours_ecoules }} jour{{ 's' if jours_ecoules > 1
+                                    else '' }})</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+
+                        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                            <dt class="text-sm font-medium leading-6 text-gray-900">Date de retour prévue/réelle</dt>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                {{ formalite.date_retour.strftime('%d/%m/%Y') if formalite.date_retour else 'Non
+                                définie' }}
+                            </dd>
+                        </div>
+
+                        <div class="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                            <dt class="text-sm font-medium leading-6 text-gray-900">Référence externe</dt>
+                            <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                                {{ formalite.reference_externe if formalite.reference_externe else '-' }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Cost Information -->
+            <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Informations Financières</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Coût Estimé</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                                {% if formalite.cout_estime %}
+                                {{ "{:,.0f}".format(formalite.cout_estime) }} FCFA
+                                {% else %}
+                                -
+                                {% endif %}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Coût Réel</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-indigo-600">
+                                {% if formalite.cout_reel %}
+                                {{ "{:,.0f}".format(formalite.cout_reel) }} FCFA
+                                {% else %}
+                                -
+                                {% endif %}
+                            </dd>
+                        </div>
+
+                        {% if formalite.cout_estime and formalite.cout_reel %}
+                        <div class="pt-4 border-t border-gray-200">
+                            <dt class="text-sm font-medium text-gray-500">Écart</dt>
+                            <dd class="mt-1 text-lg font-semibold 
+                                {% if formalite.cout_reel > formalite.cout_estime %}text-red-600
+                                {% else %}text-green-600{% endif %}">
+                                {{ "{:+,.0f}".format(formalite.cout_reel - formalite.cout_estime) }} FCFA
+                            </dd>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Information -->
+            <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Délais</h3>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center text-sm">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-gray-500">Délai estimé:</span>
+                            <span class="ml-auto font-medium">{{ delai_info.jours }} jours</span>
+                        </div>
+
+                        {% if jours_ecoules is not none and jours_ecoules >= 0 %}
+                        <div class="flex items-center text-sm">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-gray-500">Jours écoulés:</span>
+                            <span class="ml-auto font-medium 
+                                {% if jours_ecoules > delai_info.jours %}text-red-600
+                                {% else %}text-green-600{% endif %}">
+                                {{ jours_ecoules }} jours
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="pt-3 border-t border-gray-200">
+                            <p class="text-xs text-gray-500">{{ delai_info.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleStatusMenu() {
+        const menu = document.getElementById('status-menu');
+        menu.classList.toggle('hidden');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function (event) {
+        const menu = document.getElementById('status-menu');
+        const button = event.target.closest('button');
+
+        if (!button || button.getAttribute('onclick') !== 'toggleStatusMenu()') {
+            if (!menu.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Comptabilité</h1>
+        <p class="mt-2 text-sm text-gray-700">Tableau de bord financier et gestion comptable</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <!-- Office Balance -->
+        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-blue-100">Solde Compte Office</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-white">
+                {{ "{:,.0f}".format(stats.total_office) }} FCFA
+            </dd>
+        </div>
+
+        <!-- Client Balance -->
+        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-green-500 to-green-600 px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-green-100">Solde Compte Client</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-white">
+                {{ "{:,.0f}".format(stats.total_client) }} FCFA
+            </dd>
+        </div>
+
+        <!-- Total Receipts -->
+        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-purple-100">Reçus Émis</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-white">
+                {{ stats.nb_recus }}
+            </dd>
+        </div>
+
+        <!-- Total Invoices -->
+        <div class="overflow-hidden rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 px-4 py-5 shadow sm:p-6">
+            <dt class="truncate text-sm font-medium text-orange-100">Factures Créées</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-white">
+                {{ stats.nb_factures }}
+            </dd>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions Rapides</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <a href="{{ url_for('comptabilite.recus_create') }}"
+                class="relative block rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-indigo-500 hover:bg-gray-50 transition-all">
+                <svg class="mx-auto h-12 w-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="mt-2 block text-sm font-medium text-gray-900">Nouveau Reçu</span>
+            </a>
+
+            <a href="{{ url_for('comptabilite.factures_create') }}"
+                class="relative block rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-indigo-500 hover:bg-gray-50 transition-all">
+                <svg class="mx-auto h-12 w-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="mt-2 block text-sm font-medium text-gray-900">Nouvelle Facture</span>
+            </a>
+
+            <a href="{{ url_for('comptabilite.comptes_index') }}"
+                class="relative block rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-indigo-500 hover:bg-gray-50 transition-all">
+                <svg class="mx-auto h-12 w-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span class="mt-2 block text-sm font-medium text-gray-900">Plan Comptable</span>
+            </a>
+
+            <a href="{{ url_for('comptabilite.reports_balance') }}"
+                class="relative block rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-indigo-500 hover:bg-gray-50 transition-all">
+                <svg class="mx-auto h-12 w-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="mt-2 block text-sm font-medium text-gray-900">Balance Générale</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Recent Receipts -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Reçus Récents</h3>
+                    <a href="{{ url_for('comptabilite.recus_index') }}"
+                        class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Voir tout →</a>
+                </div>
+
+                {% if recent_recus %}
+                <div class="flow-root">
+                    <ul role="list" class="-my-5 divide-y divide-gray-200">
+                        {% for recu in recent_recus %}
+                        <li class="py-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-gray-900">{{ recu.numero_recu }}</p>
+                                    <p class="truncate text-sm text-gray-500">{{ recu.motif[:50] }}...</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-semibold text-gray-900">{{ "{:,.0f}".format(recu.montant) }}
+                                        FCFA</p>
+                                    <p class="text-xs text-gray-500">{{ recu.date_emission.strftime('%d/%m/%Y') }}</p>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 text-center py-8">Aucun reçu émis</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Invoices -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Factures Récentes</h3>
+                    <a href="{{ url_for('comptabilite.factures_index') }}"
+                        class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Voir tout →</a>
+                </div>
+
+                {% if recent_factures %}
+                <div class="flow-root">
+                    <ul role="list" class="-my-5 divide-y divide-gray-200">
+                        {% for facture in recent_factures %}
+                        <li class="py-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full 
+                                        {% if facture.statut == 'PAYEE' %}bg-green-100{% else %}bg-yellow-100{% endif %} 
+                                        flex items-center justify-center">
+                                        <svg class="h-6 w-6 
+                                            {% if facture.statut == 'PAYEE' %}text-green-600{% else %}text-yellow-600{% endif %}"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-gray-900">{{ facture.numero_facture }}
+                                    </p>
+                                    <p class="truncate text-sm text-gray-500">{{ facture.description[:50] }}...</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-semibold text-gray-900">{{
+                                        "{:,.0f}".format(facture.montant_ttc) }} FCFA</p>
+                                    <p class="text-xs text-gray-500">{{ facture.date_emission.strftime('%d/%m/%Y') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-500 text-center py-8">Aucune facture créée</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Summary -->
+    <div class="mt-8 bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Résumé des Comptes</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
+                                Compte</th>
+                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Catégorie
+                            </th>
+                            <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for compte in comptes[:10] %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
+                                <div class="font-medium text-gray-900">{{ compte.numero_compte }}</div>
+                                <div class="text-gray-500">{{ compte.libelle }}</div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                {% if compte.categorie == 'OFFICE' %}
+                                <span
+                                    class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                    Office
+                                </span>
+                                {% elif compte.categorie == 'CLIENT' %}
+                                <span
+                                    class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                    Client
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                    Autre
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td
+                                class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium 
+                                {% if compte.get_solde() > 0 %}text-green-600{% elif compte.get_solde() < 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                                {{ "{:,.0f}".format(compte.get_solde()) }} FCFA
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if comptes|length > 10 %}
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('comptabilite.comptes_index') }}"
+                    class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                    Voir tous les comptes ({{ comptes|length }}) →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

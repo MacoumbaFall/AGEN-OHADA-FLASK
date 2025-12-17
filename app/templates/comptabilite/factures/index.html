@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Factures</h1>
+            <p class="mt-2 text-sm text-gray-700">Gestion des factures clients et honoraires</p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <a href="{{ url_for('comptabilite.factures_create') }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z"
+                        clip-rule="evenodd" />
+                </svg>
+                Nouvelle Facture
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-900/5">
+            <dt class="truncate text-sm font-medium text-gray-500">Total Facturé</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">{{ "{:,.0f}".format(total_factures) }}
+                FCFA</dd>
+        </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 ring-1 ring-gray-900/5">
+            <dt class="truncate text-sm font-medium text-gray-500">Montant Impayé</dt>
+            <dd class="mt-1 text-3xl font-semibold tracking-tight text-red-600">{{ "{:,.0f}".format(total_impayees) }}
+                FCFA</dd>
+        </div>
+    </dl>
+
+    <!-- Invoices List -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            N° Facture</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Client /
+                            Dossier</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Échéance</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Montant TTC
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Statut</th>
+                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for facture in factures %}
+                    <tr class="hover:bg-gray-50 cursor-pointer"
+                        onclick="window.location='{{ url_for('comptabilite.factures_view', id=facture.id) }}'">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-indigo-600 sm:pl-6">
+                            {{ facture.numero_facture }}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {{ facture.date_emission.strftime('%d/%m/%Y') }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            <div class="font-medium text-gray-900">
+                                {% if facture.client %}
+                                {{ facture.client.nom }} {{ facture.client.prenom }}
+                                {% else %}
+                                <span class="text-gray-400">Client inconnu</span>
+                                {% endif %}
+                            </div>
+                            {% if facture.dossier %}
+                            <div class="text-xs text-gray-500">{{ facture.dossier.numero_dossier }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {% if facture.date_echeance %}
+                            {{ facture.date_echeance.strftime('%d/%m/%Y') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
+                            {{ "{:,.0f}".format(facture.montant_ttc) }} FCFA
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-center">
+                            {% if facture.statut == 'PAYEE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Payée
+                            </span>
+                            {% elif facture.statut == 'PARTIELLE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                Partielle
+                            </span>
+                            {% elif facture.statut == 'IMPAYEE' %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                                Impayée
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                {{ facture.statut }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <a href="{{ url_for('comptabilite.factures_view', id=facture.id) }}"
+                                class="text-indigo-600 hover:text-indigo-900">Voir</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-semibold text-gray-900">Aucune facture</h3>
+                            <p class="mt-1 text-sm text-gray-500">Commencez par créer une nouvelle facture.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

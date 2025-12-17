@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+        <div class="md:col-span-1">
+            <div class="px-4 sm:px-0">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">{{ title }}</h3>
+                <p class="mt-1 text-sm text-gray-600">
+                    Informations générales du dossier.
+                </p>
+            </div>
+        </div>
+        <div class="mt-5 md:mt-0 md:col-span-2">
+            <div class="shadow sm:rounded-md sm:overflow-hidden">
+                <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="numero_dossier" class="block text-sm font-medium text-gray-700">Numéro
+                                    Dossier</label>
+                                {{ form.numero_dossier(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.numero_dossier.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6">
+                                <label for="intitule" class="block text-sm font-medium text-gray-700">Intitulé</label>
+                                {{ form.intitule(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.intitule.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="type_dossier" class="block text-sm font-medium text-gray-700">Type de
+                                    Dossier</label>
+                                {{ form.type_dossier(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.type_dossier.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="statut" class="block text-sm font-medium text-gray-700">Statut</label>
+                                {{ form.statut(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.statut.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="date_ouverture" class="block text-sm font-medium text-gray-700">Date
+                                    d'Ouverture</label>
+                                {{ form.date_ouverture(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.date_ouverture.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="responsable_id"
+                                    class="block text-sm font-medium text-gray-700">Responsable</label>
+                                {{ form.responsable_id(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.responsable_id.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 mt-6">
+                            <a href="{{ url_for('dossiers.index') }}"
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
+                                Annuler
+                            </a>
+                            {{ form.submit(class="inline-flex justify-center py-2 px-4 border border-transparent
+                            shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

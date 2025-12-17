@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header with Actions -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-4">
+                    <li>
+                        <a href="{{ url_for('comptabilite.index') }}"
+                            class="text-gray-400 hover:text-gray-500">Comptabilité</a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <a href="{{ url_for('comptabilite.recus_index') }}"
+                                class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Reçus</a>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <span class="ml-4 text-sm font-medium text-gray-500">{{ recu.numero_recu }}</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <h1 class="text-3xl font-bold text-gray-900">Reçu {{ recu.numero_recu }}</h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.print()"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Imprimer
+            </button>
+        </div>
+    </div>
+
+    <!-- Receipt Content (Printable) -->
+    <div id="printable-receipt" class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
+        <!-- Header Section -->
+        <div class="border-b border-gray-200 bg-gray-50 px-6 py-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">REÇU</h2>
+                    <p class="mt-1 text-sm text-gray-600">N° {{ recu.numero_recu }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-medium text-gray-900">Date d'émission</p>
+                    <p class="mt-1 text-lg font-semibold text-gray-900">{{ recu.date_emission.strftime('%d/%m/%Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="px-6 py-8">
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <!-- Client/Dossier Info -->
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-3">Informations</h3>
+                    <dl class="space-y-2">
+                        {% if recu.client %}
+                        <div>
+                            <dt class="text-xs text-gray-500">Client</dt>
+                            <dd class="text-sm font-medium text-gray-900">{{ recu.client.nom }} {{ recu.client.prenom or
+                                '' }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if recu.dossier %}
+                        <div>
+                            <dt class="text-xs text-gray-500">Dossier</dt>
+                            <dd class="text-sm font-medium text-gray-900">{{ recu.dossier.numero_dossier }}</dd>
+                            {% if recu.dossier.intitule %}
+                            <dd class="text-xs text-gray-600">{{ recu.dossier.intitule }}</dd>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </dl>
+                </div>
+
+                <!-- Payment Info -->
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-3">Paiement</h3>
+                    <dl class="space-y-2">
+                        <div>
+                            <dt class="text-xs text-gray-500">Mode de paiement</dt>
+                            <dd class="text-sm font-medium text-gray-900">{{ recu.mode_paiement }}</dd>
+                        </div>
+                        {% if recu.reference_paiement %}
+                        <div>
+                            <dt class="text-xs text-gray-500">Référence</dt>
+                            <dd class="text-sm font-medium text-gray-900">{{ recu.reference_paiement }}</dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Motif -->
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Motif</h3>
+                <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ recu.motif }}</p>
+            </div>
+
+            <!-- Amount (Prominent) -->
+            <div class="mt-8 rounded-lg bg-gradient-to-r from-green-50 to-green-100 p-6 border-2 border-green-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-medium text-gray-900">Montant reçu</span>
+                    <span class="text-3xl font-bold text-green-700">{{ "{:,.0f}".format(recu.montant) }} FCFA</span>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs text-gray-500">
+                    <div>
+                        <dt class="font-medium">Créé le</dt>
+                        <dd class="mt-1">{{ recu.created_at.strftime('%d/%m/%Y à %H:%M') if recu.created_at else '-' }}
+                        </dd>
+                    </div>
+                    {% if recu.auteur %}
+                    <div>
+                        <dt class="font-medium">Par</dt>
+                        <dd class="mt-1">{{ recu.auteur.username }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if recu.ecriture %}
+                    <div>
+                        <dt class="font-medium">Écriture comptable</dt>
+                        <dd class="mt-1">N° {{ recu.ecriture.id }} -
+                            <span
+                                class="{% if recu.ecriture.valide %}text-green-600{% else %}text-yellow-600{% endif %}">
+                                {{ 'Validée' if recu.ecriture.valide else 'En attente' }}
+                            </span>
+                        </dd>
+                    </div>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Footer (for print) -->
+        <div class="border-t border-gray-200 bg-gray-50 px-6 py-4 print:block hidden">
+            <p class="text-xs text-gray-500 text-center">
+                Ce reçu a été généré automatiquement par le système AGEN-OHADA
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #printable-receipt,
+        #printable-receipt * {
+            visibility: visible;
+        }
+
+        #printable-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        .print\:block {
+            display: block !important;
+        }
+    }
+</style>
+{% endblock %}

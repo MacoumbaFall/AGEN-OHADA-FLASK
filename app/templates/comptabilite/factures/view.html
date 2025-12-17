@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header with Actions -->
+    <div class="mb-8 flex items-center justify-between print:hidden">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li>
+                    <a href="{{ url_for('comptabilite.factures_index') }}" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Retour aux factures</span>
+                    </a>
+                </li>
+                <li>
+                    <span class="text-gray-500 text-sm font-medium">Facture {{ facture.numero_facture }}</span>
+                </li>
+            </ol>
+        </nav>
+        <div class="flex gap-3">
+            <button onclick="window.print()" type="button"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                </svg>
+                Imprimer
+            </button>
+            {% if facture.statut != 'PAYEE' %}
+            <button type="button"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                Enregistrer un paiement
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Invoice Template -->
+    <div id="invoice-content" class="bg-white shadow-lg sm:rounded-lg overflow-hidden border border-gray-200">
+        <div class="px-8 py-10">
+            <!-- Header: Logo & Company Info -->
+            <div class="flex justify-between items-start border-b border-gray-200 pb-8 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">ÉTUDE NOTARIALE</h2>
+                    <p class="text-gray-500 mt-1">Maître ...</p>
+                    <p class="text-gray-500 text-sm">Adresse de l'étude<br>Ville, Pays<br>Tel: ...</p>
+                </div>
+                <div class="text-right">
+                    <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 mb-2">FACTURE</h1>
+                    <p class="text-lg font-medium text-gray-500">N° {{ facture.numero_facture }}</p>
+                    <p class="text-sm text-gray-400 mt-1">Date: {{ facture.date_emission.strftime('%d/%m/%Y') }}</p>
+                    {% if facture.date_echeance %}
+                    <p class="text-sm text-red-400 mt-1">Échéance: {{ facture.date_echeance.strftime('%d/%m/%Y') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Client Info -->
+            <div class="flex justify-between mb-10">
+                <div class="w-1/2">
+                    <h3 class="text-gray-500 font-medium text-sm uppercase tracking-wider mb-2">Facturé à</h3>
+                    {% if facture.client %}
+                    <p class="text-lg font-bold text-gray-900">{{ facture.client.nom }} {{ facture.client.prenom }}</p>
+                    <p class="text-gray-600">{{ facture.client.adresse or '' }}</p>
+                    <p class="text-gray-600">{{ facture.client.email or '' }}</p>
+                    <p class="text-gray-600">{{ facture.client.telephone or '' }}</p>
+                    {% else %}
+                    <p class="text-gray-400 italic">Aucun client associé</p>
+                    {% endif %}
+                </div>
+                <div class="w-1/2 text-right">
+                    {% if facture.dossier %}
+                    <h3 class="text-gray-500 font-medium text-sm uppercase tracking-wider mb-2">Dossier</h3>
+                    <p class="text-lg font-semibold text-gray-900">{{ facture.dossier.nom_dossier }}</p>
+                    <p class="text-gray-600 text-sm">Réf: {{ facture.dossier.numero_dossier }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Invoice Details -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden mb-8">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Description</th>
+                            <th scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-pre-line text-sm text-gray-900">
+                                {{ facture.description }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                                {{ "{:,.0f}".format(facture.montant_ht) }} FCFA
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals -->
+            <div class="flex justify-end mb-8">
+                <div class="w-1/3">
+                    <div class="flex justify-between py-2 border-b border-gray-100">
+                        <span class="text-gray-600">Total HT</span>
+                        <span class="font-medium text-gray-900">{{ "{:,.0f}".format(facture.montant_ht) }} FCFA</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-100">
+                        <span class="text-gray-600">TVA</span>
+                        <span class="font-medium text-gray-900">{{ "{:,.0f}".format(facture.montant_tva) }} FCFA</span>
+                    </div>
+                    <div class="flex justify-between py-4">
+                        <span class="text-lg font-bold text-gray-900">Net à Payer</span>
+                        <span class="text-lg font-bold text-indigo-600">{{ "{:,.0f}".format(facture.montant_ttc) }}
+                            FCFA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Badge (Print only) -->
+            <div class="hidden print:block text-center mt-12 mb-4">
+                <div
+                    class="inline-block px-4 py-2 border-2 {% if facture.statut == 'PAYEE' %}border-green-600 text-green-600{% elif facture.statut == 'IMPAYEE' %}border-red-600 text-red-600{% else %}border-gray-400 text-gray-400{% endif %} font-bold text-xl uppercase transform -rotate-12 opacity-50">
+                    {{ facture.statut }}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="border-t border-gray-200 pt-8 text-center text-sm text-gray-500">
+                <p>Arrêté la présente facture à la somme de : <span
+                        class="font-medium text-gray-900 italic capitalize">{{ facture.montant_ttc|int }} Francs
+                        CFA</span></p>
+                <p class="mt-4">Merci de votre confiance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #invoice-content,
+        #invoice-content * {
+            visibility: visible;
+        }
+
+        #invoice-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+        }
+
+        @page {
+            margin: 0;
+            size: auto;
+        }
+    }
+</style>
+{% endblock %}

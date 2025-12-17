@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Reçus</h1>
+            <p class="mt-2 text-sm text-gray-700">Liste de tous les reçus émis</p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <a href="{{ url_for('comptabilite.recus_create') }}"
+                class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nouveau Reçu
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="mb-6 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-6 py-4 shadow">
+        <div class="flex items-center justify-between text-white">
+            <div>
+                <p class="text-sm font-medium text-green-100">Total des Reçus</p>
+                <p class="mt-1 text-3xl font-bold">{{ "{:,.0f}".format(total_recus) }} FCFA</p>
+            </div>
+            <svg class="h-12 w-12 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                    {% if recus %}
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">N°
+                                    Reçu</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                    Client/Dossier</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Motif
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Mode
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
+                                    Montant</th>
+                                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            {% for recu in recus %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                    {{ recu.numero_recu }}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    {{ recu.date_emission.strftime('%d/%m/%Y') }}
+                                </td>
+                                <td class="px-3 py-4 text-sm text-gray-500">
+                                    {% if recu.client %}
+                                    <div class="font-medium text-gray-900">{{ recu.client.nom }} {{ recu.client.prenom
+                                        or '' }}</div>
+                                    {% endif %}
+                                    {% if recu.dossier %}
+                                    <div class="text-gray-500">{{ recu.dossier.numero_dossier }}</div>
+                                    {% endif %}
+                                    {% if not recu.client and not recu.dossier %}
+                                    <span class="text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                    {{ recu.motif }}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                    <span
+                                        class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium
+                                        {% if recu.mode_paiement == 'ESPECES' %}bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20
+                                        {% elif recu.mode_paiement == 'CHEQUE' %}bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10
+                                        {% elif recu.mode_paiement == 'VIREMENT' %}bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10
+                                        {% else %}bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10{% endif %}">
+                                        {{ recu.mode_paiement }}
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-semibold text-gray-900">
+                                    {{ "{:,.0f}".format(recu.montant) }} FCFA
+                                </td>
+                                <td
+                                    class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                    <a href="{{ url_for('comptabilite.recus_view', id=recu.id) }}"
+                                        class="text-indigo-600 hover:text-indigo-900">Voir</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center py-12 bg-white">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-semibold text-gray-900">Aucun reçu</h3>
+                        <p class="mt-1 text-sm text-gray-500">Commencez par émettre un nouveau reçu.</p>
+                        <div class="mt-6">
+                            <a href="{{ url_for('comptabilite.recus_create') }}"
+                                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Nouveau Reçu
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

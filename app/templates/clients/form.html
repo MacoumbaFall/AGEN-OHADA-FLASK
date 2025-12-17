@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="md:grid md:grid-cols-3 md:gap-6">
+        <div class="md:col-span-1">
+            <div class="px-4 sm:px-0">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">{{ title }}</h3>
+                <p class="mt-1 text-sm text-gray-600">
+                    Remplissez les informations ci-contre pour {% if 'Nouveau' in title %}créer un nouveau{% else
+                    %}modifier le{% endif %} client.
+                </p>
+            </div>
+        </div>
+        <div class="mt-5 md:mt-0 md:col-span-2">
+            <div class="shadow sm:rounded-md sm:overflow-hidden">
+                <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="type_client" class="block text-sm font-medium text-gray-700">Type de
+                                    Client</label>
+                                {{ form.type_client(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm", onchange="toggleFields()") }}
+                                {% for error in form.type_client.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6">
+                                <label for="nom" id="label_nom"
+                                    class="block text-sm font-medium text-gray-700">Nom</label>
+                                {{ form.nom(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.nom.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3 field-physique">
+                                <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
+                                {{ form.prenom(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.prenom.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3 field-physique">
+                                <label for="date_naissance" class="block text-sm font-medium text-gray-700">Date de
+                                    Naissance / Création</label>
+                                {{ form.date_naissance(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.date_naissance.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3 field-physique">
+                                <label for="lieu_naissance" class="block text-sm font-medium text-gray-700">Lieu de
+                                    Naissance</label>
+                                {{ form.lieu_naissance(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.lieu_naissance.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6">
+                                <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse</label>
+                                {{ form.adresse(rows=3, class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.adresse.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
+                                {{ form.telephone(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.telephone.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                                {{ form.email(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.email.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="identifiant_unique"
+                                    class="block text-sm font-medium text-gray-700">Identifiant Unique
+                                    (CNI/NINEA)</label>
+                                {{ form.identifiant_unique(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                                {% for error in form.identifiant_unique.errors %}
+                                <span class="text-red-500 text-xs">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 mt-6">
+                            <a href="{{ url_for('clients.index') }}"
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
+                                Annuler
+                            </a>
+                            {{ form.submit(class="inline-flex justify-center py-2 px-4 border border-transparent
+                            shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleFields() {
+        const typeSelect = document.getElementById('type_client');
+        const selectedValue = typeSelect.value;
+        const nomLabel = document.getElementById('label_nom');
+        const physiqueFields = document.querySelectorAll('.field-physique');
+
+        if (selectedValue === 'MORALE') {
+            nomLabel.innerText = 'Raison Sociale';
+            physiqueFields.forEach(el => el.style.display = 'none');
+        } else {
+            nomLabel.innerText = 'Nom';
+            physiqueFields.forEach(el => el.style.display = 'block');
+        }
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', toggleFields);
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="sm:flex sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Grand Livre</h1>
+                <p class="mt-2 text-sm text-gray-700">Historique des mouvements par compte</p>
+            </div>
+            <div class="mt-4 sm:mt-0">
+                <button onclick="window.print()"
+                    class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6 bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-lg p-4 print:hidden">
+        <form method="GET" action="{{ url_for('comptabilite.reports_grand_livre') }}"
+            class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-4 items-end">
+            <!-- Compte Select -->
+            <div class="sm:col-span-1">
+                <label for="compte_id" class="block text-sm font-medium text-gray-700 mb-2">Compte</label>
+                <select name="compte_id" id="compte_id"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+                    <option value="">-- Tous les comptes --</option>
+                    {% for compte in comptes %}
+                    <option value="{{ compte.id }}" {% if compte_id==compte.id %}selected{% endif %}>
+                        {{ compte.numero_compte }} - {{ compte.libelle }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Debut -->
+            <div class="sm:col-span-1">
+                <label for="date_debut" class="block text-sm font-medium text-gray-700 mb-2">Du</label>
+                <input type="date" name="date_debut" id="date_debut"
+                    value="{{ date_debut.strftime('%Y-%m-%d') if date_debut else '' }}"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+
+            <!-- Date Fin -->
+            <div class="sm:col-span-1">
+                <label for="date_fin" class="block text-sm font-medium text-gray-700 mb-2">Au</label>
+                <input type="date" name="date_fin" id="date_fin" value="{{ date_fin.strftime('%Y-%m-%d') }}"
+                    class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+            </div>
+
+            <!-- Submit -->
+            <div class="sm:col-span-1">
+                <button type="submit"
+                    class="w-full rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                    Afficher
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report Content -->
+    <div id="printable-ledger" class="space-y-8">
+        {% if mouvements %}
+        {% for compte_data in mouvements %}
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-lg overflow-hidden break-inside-avoid">
+            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 sm:px-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">
+                        {{ compte_data.compte.numero_compte }} - {{ compte_data.compte.libelle }}
+                    </h3>
+                    <span
+                        class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">
+                        Catégorie: {{ compte_data.compte.categorie or 'N/A' }}
+                    </span>
+                </div>
+            </div>
+
+            <table class="min-w-full divide-y divide-gray-300">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                            Date</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Libellé</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Pièce</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Débit</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Crédit</th>
+                        <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Solde</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    <!-- Solde Report Initial -->
+                    <tr class="bg-gray-50 italic text-gray-600">
+                        <td colspan="3" class="py-3 pl-4 pr-3 text-sm text-right font-medium sm:pl-6">Solde Initial</td>
+                        <td class="px-3 py-3 text-sm text-right">{{ "{:,.0f}".format(compte_data.solde_initial) if
+                            compte_data.solde_initial > 0 else '0' }}</td>
+                        <td class="px-3 py-3 text-sm text-right">{{ "{:,.0f}".format(abs(compte_data.solde_initial)) if
+                            compte_data.solde_initial < 0 else '0' }}</td>
+                        <td class="px-3 py-3 text-sm text-right font-medium">{{
+                            "{:,.0f}".format(compte_data.solde_initial) }}</td>
+                    </tr>
+
+                    <!-- Mouvements -->
+                    {% for ecriture in compte_data.ecritures %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 sm:pl-6">
+                            {{ ecriture.date_ecriture.strftime('%d/%m/%Y') }}
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-900">{{ ecriture.libelle }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ ecriture.piece_reference or '-'
+                            }}</td>
+
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-900">
+                            {% if ecriture.montant > 0 %}
+                            {{ "{:,.0f}".format(ecriture.montant) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-900">
+                            {% if ecriture.montant < 0 %} {{ "{:,.0f}" .format(abs(ecriture.montant)) }} {% else %} - {%
+                                endif %} </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
+                            {{ "{:,.0f}".format(ecriture.solde_cumule) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Totals -->
+                    <tr class="bg-gray-50 font-semibold text-gray-900">
+                        <td colspan="3" class="py-4 pl-4 pr-3 text-sm text-right sm:pl-6">Totaux Période</td>
+                        <td class="px-3 py-4 text-sm text-right">{{ "{:,.0f}".format(compte_data.total_debit) }}</td>
+                        <td class="px-3 py-4 text-sm text-right">{{ "{:,.0f}".format(compte_data.total_credit) }}</td>
+                        <td class="px-3 py-4 text-sm text-right">{{ "{:,.0f}".format(compte_data.solde_final) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-12 bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-lg">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <h3 class="mt-2 text-sm font-semibold text-gray-900">Aucun mouvement</h3>
+            <p class="mt-1 text-sm text-gray-500">Aucune écriture trouvée pour les critères sélectionnés.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #printable-ledger,
+        #printable-ledger * {
+            visibility: visible;
+        }
+
+        #printable-ledger {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+
+        .break-inside-avoid {
+            break-inside: avoid;
+            margin-bottom: 2rem;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}

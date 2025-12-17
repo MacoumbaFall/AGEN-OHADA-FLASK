@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <nav class="flex mb-4" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                <li>
+                    <a href="{{ url_for('comptabilite.index') }}" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Comptabilité</span>
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 flex-shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span class="ml-4 text-sm font-medium text-gray-500">{{ title }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+        <form method="POST" action="" class="px-4 py-6 sm:p-8">
+            {{ form.hidden_tag() }}
+
+            <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <!-- Date -->
+                <div class="sm:col-span-2">
+                    <label for="date_emission" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.date_emission.label.text }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-2">
+                        {{ form.date_emission(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
+                        ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                        sm:leading-6") }}
+                    </div>
+                    {% if form.date_emission.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.date_emission.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Dossier -->
+                <div class="sm:col-span-2">
+                    <label for="dossier" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.dossier.label.text }}
+                    </label>
+                    <div class="mt-2">
+                        {{ form.dossier(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                        ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                        sm:leading-6") }}
+                    </div>
+                </div>
+
+                <!-- Client -->
+                <div class="sm:col-span-2">
+                    <label for="client" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.client.label.text }}
+                    </label>
+                    <div class="mt-2">
+                        {{ form.client(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                        ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                        sm:leading-6") }}
+                    </div>
+                </div>
+
+                <!-- Montant -->
+                <div class="sm:col-span-3">
+                    <label for="montant" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.montant.label.text }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-2 relative rounded-md shadow-sm">
+                        {{ form.montant(class="block w-full rounded-md border-0 py-1.5 pr-12 text-gray-900 shadow-sm
+                        ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset
+                        focus:ring-indigo-600 sm:text-sm sm:leading-6", placeholder="0.00") }}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span class="text-gray-500 sm:text-sm">FCFA</span>
+                        </div>
+                    </div>
+                    {% if form.montant.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.montant.errors[0] }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Mode de Paiement -->
+                <div class="sm:col-span-3">
+                    <label for="mode_paiement" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.mode_paiement.label.text }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-2">
+                        {{ form.mode_paiement(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
+                        ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                        sm:leading-6") }}
+                    </div>
+                </div>
+
+                <!-- Référence Paiement -->
+                <div class="sm:col-span-6">
+                    <label for="reference_paiement" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.reference_paiement.label.text }}
+                    </label>
+                    <div class="mt-2">
+                        {{ form.reference_paiement(class="block w-full rounded-md border-0 py-1.5 text-gray-900
+                        shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2
+                        focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", placeholder="N° Chèque, N°
+                        Transaction...") }}
+                    </div>
+                </div>
+
+                <!-- Motif -->
+                <div class="sm:col-span-6">
+                    <label for="motif" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.motif.label.text }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="mt-2">
+                        {{ form.motif(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                        ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset
+                        focus:ring-indigo-600 sm:text-sm sm:leading-6", rows="3", placeholder="Description du paiement
+                        reçu...") }}
+                    </div>
+                    {% if form.motif.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.motif.errors[0] }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="mt-6 rounded-md bg-blue-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm text-blue-700">
+                            Le reçu sera automatiquement numéroté et une écriture comptable sera créée et validée.
+                            Les fonds seront enregistrés dans le Compte Client (fonds de tiers).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-8 flex items-center justify-end gap-x-6">
+                <a href="{{ url_for('comptabilite.recus_index') }}"
+                    class="text-sm font-semibold leading-6 text-gray-900">Annuler</a>
+                {{ form.submit_btn(class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm
+                hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-indigo-600 cursor-pointer") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

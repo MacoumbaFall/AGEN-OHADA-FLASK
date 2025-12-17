@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-xl font-semibold text-gray-900">Dossier: {{ dossier.numero_dossier }}</h1>
+            <p class="mt-2 text-sm text-gray-700">{{ dossier.intitule }}</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-2">
+            <a href="{{ url_for('dossiers.edit', id=dossier.id) }}"
+                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                Modifier
+            </a>
+            <a href="{{ url_for('dossiers.index') }}"
+                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                Retour
+            </a>
+            <form action="{{ url_for('dossiers.delete', id=dossier.id) }}" method="POST" class="inline-block"
+                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.');">
+                <button type="submit"
+                    class="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:w-auto">
+                    Supprimer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <!-- Informations Générales -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Informations Générales</h2>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Numéro Dossier</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ dossier.numero_dossier }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Type</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ dossier.type_dossier }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Statut</dt>
+                    <dd class="mt-1 text-sm">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if dossier.statut == 'OUVERT' %} bg-green-100 text-green-800
+                            {% elif dossier.statut == 'CLOTURE' %} bg-gray-100 text-gray-800
+                            {% else %} bg-yellow-100 text-yellow-800 {% endif %}">
+                            {{ dossier.statut }}
+                        </span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Date Ouverture</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ dossier.date_ouverture.strftime('%d/%m/%Y') if
+                        dossier.date_ouverture else '-' }}</dd>
+                </div>
+                <div class="sm:col-span-2">
+                    <dt class="text-sm font-medium text-gray-500">Responsable</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ dossier.responsable.username if dossier.responsable else
+                        'Non assigné' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Parties (Clients) -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Parties</h2>
+
+            <!-- Liste des parties -->
+            <div class="flow-root mb-6">
+                <ul role="list" class="-my-5 divide-y divide-gray-200">
+                    {% for party in dossier.parties %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    <a href="{{ url_for('clients.view', id=party.client.id) }}"
+                                        class="hover:text-indigo-600">
+                                        {{ party.client.nom }} {{ party.client.prenom or '' }}
+                                    </a>
+                                </p>
+                                <p class="text-sm text-gray-500 truncate">
+                                    {{ party.role_dans_acte }}
+                                </p>
+                            </div>
+                            <div>
+                                <form
+                                    action="{{ url_for('dossiers.remove_party', dossier_id=dossier.id, client_id=party.client.id) }}"
+                                    method="POST"
+                                    onsubmit="return confirm('Êtes-vous sûr de vouloir retirer cette partie ?');">
+                                    <button type="submit"
+                                        class="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50">
+                                        Retirer
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="py-4 text-sm text-gray-500">Aucune partie associée.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Formulaire d'ajout -->
+            {% if form %}
+            <div class="mt-6 border-t border-gray-200 pt-4">
+                <h3 class="text-sm font-medium text-gray-900 mb-3">Ajouter une partie</h3>
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="grid grid-cols-1 gap-y-3">
+                        <div>
+                            {{ form.client_id.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.client_id(class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300
+                            focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md") }}
+                        </div>
+                        <div>
+                            {{ form.role_dans_acte.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.role_dans_acte(class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block
+                            w-full sm:text-sm border-gray-300 rounded-md") }}
+                        </div>
+                        <div>
+                            {{ form.submit(class="w-full inline-flex justify-center py-2 px-4 border border-transparent
+                            shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
