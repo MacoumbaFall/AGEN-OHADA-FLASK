@@ -6,7 +6,6 @@ from app.actes.forms import TemplateForm, ActGenerationForm
 from app.models import Template, Dossier, Acte
 from jinja2 import Template as JinjaTemplate
 from datetime import datetime
-from xhtml2pdf import pisa
 from io import BytesIO
 from flask import send_file, make_response
 
@@ -123,8 +122,8 @@ def download_pdf(id):
         flash('Acte non trouvé.', 'error')
         return redirect(url_for('dossiers.index'))
 
-    # Create PDF
-    pdf_buffer = BytesIO()
+    # Create PDF using WeasyPrint
+    from weasyprint import HTML
     
     # Simple HTML wrapper for PDF
     html_content = f"""
@@ -141,12 +140,8 @@ def download_pdf(id):
     </html>
     """
     
-    pisa_status = pisa.CreatePDF(src=html_content, dest=pdf_buffer)
-    
-    if pisa_status.err:
-        flash('Erreur lors de la création du PDF.', 'error')
-        return redirect(url_for('actes.view_act', id=id))
-        
+    pdf_buffer = BytesIO()
+    HTML(string=html_content).write_pdf(pdf_buffer)
     pdf_buffer.seek(0)
     
     return send_file(
