@@ -9,9 +9,9 @@ workers = multiprocessing.cpu_count() * 2 + 1
 worker_class = "sync"
 timeout = 120
 
-# Logging
-accesslog = "access.log"
-errorlog = "error.log"
+# Logging - output to stdout/stderr for Render
+accesslog = "-"  # stdout
+errorlog = "-"   # stderr
 loglevel = "info"
 
 # Process naming
