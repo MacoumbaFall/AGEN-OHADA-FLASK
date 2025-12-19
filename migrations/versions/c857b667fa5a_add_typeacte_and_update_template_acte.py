@@ -52,19 +52,21 @@ def upgrade():
                existing_type=postgresql.TIMESTAMP(timezone=True),
                nullable=False,
                existing_server_default=sa.text('CURRENT_TIMESTAMP'))
-        batch_op.drop_index(batch_op.f('idx_factures_client'))
-        batch_op.drop_index(batch_op.f('idx_factures_date'))
-        batch_op.drop_index(batch_op.f('idx_factures_dossier'))
-        batch_op.drop_index(batch_op.f('idx_factures_statut'))
+        # Use raw SQL for conditional drop
+        op.execute('DROP INDEX IF EXISTS idx_factures_client')
+        op.execute('DROP INDEX IF EXISTS idx_factures_date')
+        op.execute('DROP INDEX IF EXISTS idx_factures_dossier')
+        op.execute('DROP INDEX IF EXISTS idx_factures_statut')
 
     with op.batch_alter_table('recus', schema=None) as batch_op:
         batch_op.alter_column('created_at',
                existing_type=postgresql.TIMESTAMP(timezone=True),
                nullable=False,
                existing_server_default=sa.text('CURRENT_TIMESTAMP'))
-        batch_op.drop_index(batch_op.f('idx_recus_client'))
-        batch_op.drop_index(batch_op.f('idx_recus_date'))
-        batch_op.drop_index(batch_op.f('idx_recus_dossier'))
+        # Use raw SQL for conditional drop
+        op.execute('DROP INDEX IF EXISTS idx_recus_client')
+        op.execute('DROP INDEX IF EXISTS idx_recus_date')
+        op.execute('DROP INDEX IF EXISTS idx_recus_dossier')
 
     with op.batch_alter_table('templates', schema=None) as batch_op:
         batch_op.add_column(sa.Column('type_acte_id', sa.Integer(), nullable=True))
