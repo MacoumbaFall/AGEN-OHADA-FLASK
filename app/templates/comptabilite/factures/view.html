@@ -3,6 +3,7 @@
 {% block content %}
 <div class="px-4 sm:px-6 lg:px-8">
     <!-- Header with Actions -->
+    {% if not is_pdf %}
     <div class="mb-8 flex items-center justify-between print:hidden">
         <nav class="flex" aria-label="Breadcrumb">
             <ol class="flex items-center space-x-4">
@@ -22,6 +23,14 @@
             </ol>
         </nav>
         <div class="flex gap-3">
+            <a href="{{ url_for('comptabilite.factures_download_pdf', id=facture.id) }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Télécharger PDF
+            </a>
             <button onclick="window.print()" type="button"
                 class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
                 <svg class="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -39,6 +48,7 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
     <!-- Invoice Template -->
     <div id="invoice-content" class="bg-white shadow-lg sm:rounded-lg overflow-hidden border border-gray-200">

@@ -16,9 +16,56 @@
     </div>
 </div>
 
-<div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-    <div class="px-4 py-5 sm:p-6 prose max-w-none">
-        {{ acte.contenu_html | safe }}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Contenu de l'acte -->
+    <div class="lg:col-span-2">
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+            <div class="px-4 py-5 sm:p-6 prose max-w-none">
+                {{ acte.contenu_html | safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations complémentaires -->
+    <div class="space-y-6">
+        <!-- Dossier lié -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Dossier Lié</h3>
+            {% if acte.dossier %}
+            <div class="space-y-2">
+                <p class="text-sm font-medium text-indigo-600">
+                    <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">
+                        {{ acte.dossier.numero_dossier }}
+                    </a>
+                </p>
+                <p class="text-sm text-gray-500">{{ acte.dossier.intitule }}</p>
+                <p class="text-xs text-gray-400">Statut: {{ acte.dossier.statut }}</p>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 italic">Aucun dossier associé.</p>
+            {% endif %}
+        </div>
+
+        <!-- Parties du dossier -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Parties Concernées</h3>
+            {% if acte.dossier and acte.dossier.parties %}
+            <ul role="list" class="divide-y divide-gray-100">
+                {% for party in acte.dossier.parties %}
+                <li class="py-3">
+                    <p class="text-sm font-medium text-gray-900">
+                        <a href="{{ url_for('clients.view', id=party.client.id) }}" class="hover:text-indigo-600">
+                            {{ party.client.nom }} {{ party.client.prenom or '' }}
+                        </a>
+                    </p>
+                    <p class="text-xs text-gray-500">{{ party.role_dans_acte }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 italic">Aucune partie répertoriée.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

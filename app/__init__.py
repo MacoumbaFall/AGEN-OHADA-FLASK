@@ -46,6 +46,9 @@ def create_app(config_class=Config):
     from app.comptabilite import bp as comptabilite_bp
     app.register_blueprint(comptabilite_bp, url_prefix='/comptabilite')
 
+    from app.users import bp as users_bp
+    app.register_blueprint(users_bp, url_prefix='/users')
+
     from app import cli
     cli.register(app)
 

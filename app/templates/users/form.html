@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                {{ title }}
+            </h2>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <a href="{{ url_for('users.index') }}"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+
+                <div class="space-y-6">
+                    <!-- Username -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.username.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.username(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
+                            ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset
+                            focus:ring-indigo-600 sm:text-sm sm:leading-6") }}
+                        </div>
+                        {% if form.username.errors %}
+                        {% for error in form.username.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.email.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.email(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                            ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset
+                            focus:ring-indigo-600 sm:text-sm sm:leading-6") }}
+                        </div>
+                        {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Role -->
+                    <div>
+                        <label for="role" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.role.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.role(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                            ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                            sm:leading-6") }}
+                        </div>
+                        {% if form.role.errors %}
+                        {% for error in form.role.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Password (only for create) -->
+                    {% if not is_edit %}
+                    <div>
+                        <label for="password" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.password.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.password(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
+                            ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset
+                            focus:ring-indigo-600 sm:text-sm sm:leading-6") }}
+                        </div>
+                        {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="password_confirm" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.password_confirm.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.password_confirm(class="block w-full rounded-md border-0 py-1.5 text-gray-900
+                            shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2
+                            focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6") }}
+                        </div>
+                        {% if form.password_confirm.errors %}
+                        {% for error in form.password_confirm.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="mt-6 flex items-center justify-end gap-x-6">
+                    <a href="{{ url_for('users.index') }}" class="text-sm font-semibold leading-6 text-gray-900">
+                        Annuler
+                    </a>
+                    {{ form.submit(class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm
+                    hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                    focus-visible:outline-indigo-600") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

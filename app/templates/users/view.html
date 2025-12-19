@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                {{ user.username }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Détails de l'utilisateur
+            </p>
+        </div>
+        <div class="mt-4 flex gap-3 md:ml-4 md:mt-0">
+            <a href="{{ url_for('users.reset_password', id=user.id) }}"
+                class="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500">
+                Réinitialiser mot de passe
+            </a>
+            <a href="{{ url_for('users.edit', id=user.id) }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                Modifier
+            </a>
+            <a href="{{ url_for('users.index') }}"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- User Details -->
+    <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-base font-semibold leading-6 text-gray-900">Informations de l'utilisateur</h3>
+        </div>
+        <div class="border-t border-gray-200">
+            <dl>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Nom d'utilisateur</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{{ user.username }}</dd>
+                </div>
+                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Email</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{{ user.email }}</dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Rôle</dt>
+                    <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
+                        <span class="inline-flex rounded-full px-3 py-1 text-sm font-semibold
+                            {% if user.role == 'ADMIN' %}bg-purple-100 text-purple-800
+                            {% elif user.role == 'NOTAIRE' %}bg-blue-100 text-blue-800
+                            {% elif user.role == 'CLERC' %}bg-green-100 text-green-800
+                            {% elif user.role == 'COMPTABLE' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ user.role }}
+                        </span>
+                    </dd>
+                </div>
+                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Date de création</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                        {{ user.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                    </dd>
+                </div>
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Dernière connexion</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+                        {% if user.last_login %}
+                        {{ user.last_login.strftime('%d/%m/%Y à %H:%M') }}
+                        {% else %}
+                        <span class="text-gray-400">Jamais connecté</span>
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Activity Stats -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <dt class="text-sm font-medium text-gray-500">Dossiers gérés</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                    {{ user.dossiers|length }}
+                </dd>
+            </div>
+        </div>
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <dt class="text-sm font-medium text-gray-500">Écritures comptables</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                    {{ user.ecritures|length }}
+                </dd>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    {% if user.id != current_user.id %}
+    <div class="overflow-hidden bg-white shadow sm:rounded-lg border-2 border-red-200">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-base font-semibold leading-6 text-gray-900">Zone de danger</h3>
+            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                <p>La suppression de cet utilisateur est irréversible. Toutes les données associées seront perdues.</p>
+            </div>
+            <form action="{{ url_for('users.delete', id=user.id) }}" method="POST" class="mt-5"
+                onsubmit="return confirm('Êtes-vous absolument sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.');">
+                <button type="submit"
+                    class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+                    Supprimer cet utilisateur
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

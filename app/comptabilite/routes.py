@@ -6,9 +6,14 @@ from app.comptabilite.service import ComptabiliteService
 from app.comptabilite.forms import CompteForm, RecuForm, FactureForm, RecetteForm, DepenseForm
 from app.models import ComptaCompte, ComptaEcriture, Recu, Facture
 from datetime import datetime, date
+from io import BytesIO
+from flask import send_file, make_response
+
+from app.decorators import role_required
 
 @bp.route('/')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def index():
     """Dashboard with financial overview."""
     # Get account balances
@@ -45,6 +50,7 @@ def index():
 
 @bp.route('/init-accounts', methods=['POST'])
 @login_required
+@role_required('ADMIN')
 def init_accounts():
     """Initialize default chart of accounts."""
     try:
@@ -58,6 +64,7 @@ def init_accounts():
 
 @bp.route('/comptes')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def comptes_index():
     """List all accounts."""
     comptes = db.session.execute(
@@ -76,6 +83,7 @@ def comptes_index():
 
 @bp.route('/comptes/new', methods=['GET', 'POST'])
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def comptes_create():
     """Create a new account."""
     form = CompteForm()
@@ -99,6 +107,7 @@ def comptes_create():
 
 @bp.route('/recus')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def recus_index():
     """List all receipts."""
     recus = db.session.execute(
@@ -113,6 +122,7 @@ def recus_index():
 
 @bp.route('/recus/new', methods=['GET', 'POST'])
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def recus_create():
     """Create a new receipt."""
     form = RecuForm()
@@ -138,6 +148,7 @@ def recus_create():
 
 @bp.route('/recus/<int:id>')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def recus_view(id):
     """View receipt details."""
     recu = db.session.get(Recu, id)
@@ -147,10 +158,39 @@ def recus_view(id):
     
     return render_template('comptabilite/recus/view.html', recu=recu)
 
+@bp.route('/recus/<int:id>/download')
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def recus_download_pdf(id):
+    """Download receipt as PDF."""
+    recu = db.session.get(Recu, id)
+    if not recu:
+        flash('Reçu introuvable.', 'error')
+        return redirect(url_for('comptabilite.recus_index'))
+    
+    from weasyprint import HTML
+    
+    # We render the template to a string. 
+    # Note: we might need a specific template for PDF or use the view one if it's clean enough.
+    # The view.html has a print-specific CSS, but for server-side PDF we might want a cleaner wrapper.
+    html_content = render_template('comptabilite/recus/view.html', recu=recu, is_pdf=True)
+    
+    pdf_buffer = BytesIO()
+    HTML(string=html_content, base_url=request.base_url).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"recu_{recu.numero_recu}.pdf",
+        mimetype='application/pdf'
+    )
+
 # ===== FACTURES (INVOICES) =====
 
 @bp.route('/factures')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def factures_index():
     """List all invoices."""
     factures = db.session.execute(
@@ -167,6 +207,7 @@ def factures_index():
 
 @bp.route('/factures/new', methods=['GET', 'POST'])
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def factures_create():
     """Create a new invoice."""
     form = FactureForm()
@@ -192,6 +233,7 @@ def factures_create():
 
 @bp.route('/factures/<int:id>')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def factures_view(id):
     """View invoice details."""
     facture = db.session.get(Facture, id)
@@ -201,10 +243,36 @@ def factures_view(id):
     
     return render_template('comptabilite/factures/view.html', facture=facture)
 
+@bp.route('/factures/<int:id>/download')
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def factures_download_pdf(id):
+    """Download invoice as PDF."""
+    facture = db.session.get(Facture, id)
+    if not facture:
+        flash('Facture introuvable.', 'error')
+        return redirect(url_for('comptabilite.factures_index'))
+    
+    from weasyprint import HTML
+    
+    html_content = render_template('comptabilite/factures/view.html', facture=facture, is_pdf=True)
+    
+    pdf_buffer = BytesIO()
+    HTML(string=html_content, base_url=request.base_url).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"facture_{facture.numero_facture}.pdf",
+        mimetype='application/pdf'
+    )
+
 # ===== REPORTS =====
 
 @bp.route('/reports/balance')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def reports_balance():
     """Trial balance report."""
     date_fin = request.args.get('date_fin')
@@ -224,8 +292,43 @@ def reports_balance():
                          total_credit=total_credit,
                          date_fin=date_fin)
 
+@bp.route('/reports/balance/download')
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def reports_balance_download():
+    """Download trial balance as PDF."""
+    date_fin = request.args.get('date_fin')
+    if date_fin:
+        date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
+    else:
+        date_fin = date.today()
+    
+    balance = ComptabiliteService.get_balance_generale(date_fin=date_fin)
+    total_debit = sum(item['debit'] for item in balance)
+    total_credit = sum(item['credit'] for item in balance)
+    
+    from weasyprint import HTML
+    html_content = render_template('comptabilite/reports/balance.html',
+                                 balance=balance,
+                                 total_debit=total_debit,
+                                 total_credit=total_credit,
+                                 date_fin=date_fin,
+                                 is_pdf=True)
+    
+    pdf_buffer = BytesIO()
+    HTML(string=html_content, base_url=request.base_url).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"balance_generale_{date_fin}.pdf",
+        mimetype='application/pdf'
+    )
+
 @bp.route('/reports/grand-livre')
 @login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def reports_grand_livre():
     """General ledger report."""
     compte_id = request.args.get('compte_id', type=int)
@@ -255,3 +358,55 @@ def reports_grand_livre():
                          compte_id=compte_id,
                          date_debut=date_debut,
                          date_fin=date_fin)
+
+@bp.route('/reports/grand-livre/download')
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def reports_grand_livre_download():
+    """Download general ledger as PDF."""
+    compte_id = request.args.get('compte_id', type=int)
+    date_debut = request.args.get('date_debut')
+    date_fin = request.args.get('date_fin')
+    
+    if date_debut:
+        date_debut = datetime.strptime(date_debut, '%Y-%m-%d').date()
+    if date_fin:
+        date_fin = datetime.strptime(date_fin, '%Y-%m-%d').date()
+    else:
+        date_fin = date.today()
+    
+    mouvements = ComptabiliteService.get_grand_livre(
+        compte_id=compte_id,
+        date_debut=date_debut,
+        date_fin=date_fin
+    )
+    
+    comptes = db.session.execute(
+        db.select(ComptaCompte).filter_by(actif=True).order_by(ComptaCompte.numero_compte)
+    ).scalars().all()
+    
+    from weasyprint import HTML
+    html_content = render_template('comptabilite/reports/grand_livre.html',
+                                 mouvements=mouvements,
+                                 comptes=comptes,
+                                 compte_id=compte_id,
+                                 date_debut=date_debut,
+                                 date_fin=date_fin,
+                                 is_pdf=True)
+    
+    pdf_buffer = BytesIO()
+    HTML(string=html_content, base_url=request.base_url).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    
+    filename = "grand_livre"
+    if compte_id:
+        compte = db.session.get(ComptaCompte, compte_id)
+        if compte:
+            filename += f"_{compte.numero_compte}"
+    
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"{filename}_{date_fin}.pdf",
+        mimetype='application/pdf'
+    )

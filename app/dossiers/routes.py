@@ -7,8 +7,11 @@ from app.models import Dossier, User, Client, DossierParty
 from sqlalchemy import select, or_
 from datetime import datetime
 
+from app.decorators import role_required
+
 @bp.route('/')
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def index():
     page = request.args.get('page', 1, type=int)
     q = request.args.get('q', '', type=str)
@@ -31,6 +34,7 @@ def index():
 
 @bp.route('/new', methods=['GET', 'POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def create():
     form = DossierForm()
     # Populate users for responsible selection
@@ -55,6 +59,7 @@ def create():
 
 @bp.route('/<int:id>', methods=['GET', 'POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def view(id):
     dossier = db.session.get(Dossier, id)
     if not dossier:
@@ -89,6 +94,7 @@ def view(id):
 
 @bp.route('/<int:dossier_id>/remove_party/<int:client_id>', methods=['POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def remove_party(dossier_id, client_id):
     party = db.session.scalar(
         select(DossierParty).where(
@@ -106,6 +112,7 @@ def remove_party(dossier_id, client_id):
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def edit(id):
     dossier = db.session.get(Dossier, id)
     if not dossier:
@@ -131,6 +138,7 @@ def edit(id):
 
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
+@role_required('ADMIN', 'NOTAIRE')
 def delete(id):
     dossier = db.session.get(Dossier, id)
     if not dossier:

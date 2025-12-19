@@ -80,21 +80,6 @@ class DossierParty(db.Model):
     dossier = relationship('Dossier', back_populates='parties')
     client = relationship('Client', back_populates='dossier_participations')
 
-class Acte(db.Model):
-    __tablename__ = 'actes'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    dossier_id: Mapped[Optional[int]] = mapped_column(ForeignKey('dossiers.id', ondelete='CASCADE'))
-    type_acte: Mapped[str] = mapped_column(String(100), nullable=False)
-    contenu_json: Mapped[Optional[dict]] = mapped_column(JSON)
-    contenu_html: Mapped[Optional[str]] = mapped_column(Text)
-    statut: Mapped[str] = mapped_column(String(30), default='BROUILLON')
-    date_signature: Mapped[Optional[datetime]] = mapped_column(Date)
-    version: Mapped[int] = mapped_column(Integer, default=1)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    dossier = relationship('Dossier', back_populates='actes')
 
 class ComptaCompte(db.Model):
     __tablename__ = 'compta_comptes'
@@ -221,6 +206,37 @@ class Template(db.Model):
     nom: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
     contenu: Mapped[str] = mapped_column(Text, nullable=False) # Jinja2/HTML content
-    type_acte: Mapped[Optional[str]] = mapped_column(String(100)) # Catégorie (Vente, Procuration...)
+    type_acte_id: Mapped[Optional[int]] = mapped_column(ForeignKey('type_actes.id'))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    type_acte = relationship('TypeActe', back_populates='templates')
+
+class TypeActe(db.Model):
+    __tablename__ = 'type_actes'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+
+    templates = relationship('Template', back_populates='type_acte')
+    actes = relationship('Acte', back_populates='type_acte_relation')
+
+# Update Acte model to include type_acte_id
+class Acte(db.Model):
+    __tablename__ = 'actes'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    dossier_id: Mapped[Optional[int]] = mapped_column(ForeignKey('dossiers.id', ondelete='CASCADE'))
+    type_acte: Mapped[str] = mapped_column(String(100), nullable=False) # Keep original string for legacy/fallback
+    type_acte_id: Mapped[Optional[int]] = mapped_column(ForeignKey('type_actes.id'))
+    contenu_json: Mapped[Optional[dict]] = mapped_column(JSON)
+    contenu_html: Mapped[Optional[str]] = mapped_column(Text)
+    statut: Mapped[str] = mapped_column(String(30), default='BROUILLON')
+    date_signature: Mapped[Optional[datetime]] = mapped_column(Date)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    dossier = relationship('Dossier', back_populates='actes')
+    type_acte_relation = relationship('TypeActe', back_populates='actes')

@@ -8,8 +8,11 @@ from app.models import Formalite, Dossier
 from sqlalchemy import select, or_
 from datetime import datetime, timedelta
 
+from app.decorators import role_required
+
 @bp.route('/')
 @login_required
+@role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def index():
     """Liste des formalités avec filtrage et recherche."""
     # Récupérer les paramètres de filtrage
@@ -60,6 +63,7 @@ def index():
 
 @bp.route('/<int:id>')
 @login_required
+@role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def view(id):
     """Vue détaillée d'une formalité."""
     formalite = db.session.get(Formalite, id)
@@ -82,6 +86,7 @@ def view(id):
 
 @bp.route('/new', methods=['GET', 'POST'])
 @login_required
+@role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def create():
     """Créer une nouvelle formalité."""
     form = FormaliteForm()
@@ -113,6 +118,7 @@ def create():
 
 @bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@role_required('CLERC', 'ADMIN', 'NOTAIRE')
 def edit(id):
     """Modifier une formalité existante."""
     formalite = db.session.get(Formalite, id)
@@ -144,6 +150,7 @@ def edit(id):
 
 @bp.route('/<int:id>/delete', methods=['POST'])
 @login_required
+@role_required('ADMIN', 'NOTAIRE')
 def delete(id):
     """Supprimer une formalité."""
     formalite = db.session.get(Formalite, id)
@@ -155,6 +162,7 @@ def delete(id):
 
 @bp.route('/<int:id>/update-status', methods=['POST'])
 @login_required
+@role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def update_status(id):
     """Mettre à jour le statut d'une formalité."""
     formalite = db.session.get(Formalite, id)
@@ -180,6 +188,7 @@ def update_status(id):
 
 @bp.route('/api/estimate-cost', methods=['POST'])
 @login_required
+@role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def estimate_cost():
     """API endpoint pour estimer le coût d'une formalité."""
     data = request.get_json()

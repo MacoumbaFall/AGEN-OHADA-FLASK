@@ -1,13 +1,15 @@
 from flask import render_template, flash, redirect, url_for, request
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app import db
 from app.clients import bp
 from app.clients.forms import ClientForm
 from app.models import Client
 from sqlalchemy import select, or_
+from app.decorators import role_required
 
 @bp.route('/clients')
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'SECRETAIRE', 'ADMIN')
 def index():
     page = request.args.get('page', 1, type=int)
     q = request.args.get('q', '', type=str)
@@ -31,6 +33,7 @@ def index():
 
 @bp.route('/clients/new', methods=['GET', 'POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'SECRETAIRE', 'ADMIN')
 def create():
     form = ClientForm()
     if form.validate_on_submit():
@@ -53,6 +56,7 @@ def create():
 
 @bp.route('/clients/<int:id>')
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'SECRETAIRE', 'ADMIN')
 def view(id):
     client = db.session.get(Client, id)
     if not client:
@@ -62,6 +66,7 @@ def view(id):
 
 @bp.route('/clients/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def edit(id):
     client = db.session.get(Client, id)
     if not client:
@@ -85,6 +90,7 @@ def edit(id):
 
 @bp.route('/clients/<int:id>/delete', methods=['POST'])
 @login_required
+@role_required('ADMIN', 'NOTAIRE')
 def delete(id):
     client = db.session.get(Client, id)
     if not client:
