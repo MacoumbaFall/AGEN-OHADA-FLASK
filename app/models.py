@@ -205,7 +205,9 @@ class Template(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nom: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    contenu: Mapped[str] = mapped_column(Text, nullable=False) # Jinja2/HTML content
+    contenu: Mapped[Optional[str]] = mapped_column(Text) # Jinja2/HTML content (for legacy MD)
+    file_path: Mapped[Optional[str]] = mapped_column(String(255)) # Path to .docx file
+    is_docx: Mapped[bool] = mapped_column(Boolean, default=False)
     type_acte_id: Mapped[Optional[int]] = mapped_column(ForeignKey('type_actes.id'))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -234,9 +236,22 @@ class Acte(db.Model):
     contenu_html: Mapped[Optional[str]] = mapped_column(Text)
     statut: Mapped[str] = mapped_column(String(30), default='BROUILLON')
     date_signature: Mapped[Optional[datetime]] = mapped_column(Date)
+    
+    # Finalization and Signature fields
+    finalise_par_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'))
+    date_finalisation: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    signature_electronique: Mapped[Optional[str]] = mapped_column(Text) # Placeholder for hash/signature
+    
+    # Archiving and Repertoire fields
+    numero_repertoire: Mapped[Optional[int]] = mapped_column(Integer)
+    date_archivage: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    archive_par_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'))
+    
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     dossier = relationship('Dossier', back_populates='actes')
     type_acte_relation = relationship('TypeActe', back_populates='actes')
+    finalise_par = relationship('User', foreign_keys=[finalise_par_id])
+    archive_par = relationship('User', foreign_keys=[archive_par_id])

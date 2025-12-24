@@ -38,10 +38,11 @@
 <div class="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-3">
     <!-- Main Form -->
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
-        <form method="post" class="p-6 space-y-6">
+        <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
             {{ form.hidden_tag() }}
 
             <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <!-- ... existing fields ... -->
                 <div class="sm:col-span-4">
                     <label for="nom" class="block text-sm font-medium leading-6 text-gray-900">{{ form.nom.label
                         }}</label>
@@ -76,9 +77,22 @@
                     </div>
                 </div>
 
-                <div class="col-span-full">
+                <div class="col-span-full border-t pt-6">
+                    <h4 class="text-md font-semibold mb-4">Option A : Modèle Word (Recommandé)</h4>
+                    <label for="docx_file" class="block text-sm font-medium leading-6 text-gray-900">{{
+                        form.docx_file.label }}</label>
+                    <div class="mt-2">
+                        {{ form.docx_file(class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg
+                        cursor-pointer bg-gray-50 focus:outline-none") }}
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Uploadez un fichier .docx contenant des balises {{ '{{
+                        variables }}' }}.</p>
+                </div>
+
+                <div class="col-span-full border-t pt-6">
+                    <h4 class="text-md font-semibold mb-4">Option B : Modèle Texte / Markdown</h4>
                     <label for="contenu" class="block text-sm font-medium leading-6 text-gray-900">
-                        {{ form.contenu.label }} (Markdown & Jinja2)
+                        {{ form.contenu.label }}
                     </label>
                     <div class="mt-2">
                         {{ form.contenu(class="block w-full") }}
@@ -166,6 +180,7 @@
     const easyMDE = new EasyMDE({
         element: document.getElementById('contenu'),
         spellChecker: false,
+        forceSync: true, // Force sync with textarea
         autosave: {
             enabled: true,
             uniqueId: "act_template_{{ template.id if template else 'new' }}",
@@ -178,6 +193,13 @@
         toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "table", "horizontal-rule", "|", "preview", "side-by-side", "fullscreen", "|", "guide"],
         placeholder: "Rédigez votre modèle ici...",
         minHeight: "400px"
+    });
+
+    // Manual sync before submission and debug log
+    document.querySelector('form').addEventListener('submit', function (e) {
+        console.log('Form submission triggered');
+        easyMDE.save(); // Manual sync
+        console.log('Textarea content:', document.getElementById('contenu').value);
     });
 
     function insertVar(variable) {

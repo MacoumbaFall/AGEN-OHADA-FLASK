@@ -55,15 +55,19 @@ Le cœur de votre activité. Un dossier regroupe tous les éléments d'une affai
 
 ## 5. Rédaction d'Actes
 
-Générez vos documents juridiques automatiquement.
-*   **Modèles (Templates)** : Accédez à la bibliothèque de modèles d'actes. Vous pouvez créer vos propres modèles en utilisant des variables dynamiques (ex: `{{ dossier.numero }}`).
+Générez vos documents juridiques automatiquement à partir de modèles prédéfinis.
+
+*   **Modèles (Templates)** : Accédez à la bibliothèque via le menu "Modèles". Vous pouvez créer vos propres documents en utilisant :
+    *   **Markdown** pour le formatage (gras, listes, tableaux).
+    *   **Jinja2** pour les variables dynamiques (ex: `{{ client.nom }}`).
+*   **Éditeur Intelligent** : L'éditeur intègre une aide sur le côté droit. Cliquez sur une variable (ex: "Nom du Client") pour l'insérer à l'endroit du curseur.
+*   **Enregistrement** : Le bouton "Enregistrer" synchronise automatiquement votre saisie. En cas d'erreur de saisie ou de base de données, un message d'alerte rouge s'affichera pour vous guider.
 *   **Générer un Acte** :
-    1.  Allez dans un Dossier > Onglet Actes.
-    2.  Cliquez sur "Générer un acte".
-    3.  Choisissez le modèle.
-    4.  Visualisez le document pré-rempli avec les données du dossier et des clients.
-    5.  Éditez le contenu si nécessaire directement dans l'éditeur.
-    6.  Enregistrez au format PDF ou Word (selon configuration).
+    1.  Utilisez le bouton **"Générer un Acte"** dans la barre de navigation ou via un Dossier.
+    2.  Sélectionnez le Dossier concerné et le Modèle à utiliser.
+    3.  Cliquez sur **"Prévisualiser"** pour voir le résultat avec les données réelles.
+    4.  Si tout est correct, cliquez sur **"Valider et Sauvegarder"**.
+*   **Téléchargement** : Une fois l'acte sauvegardé, vous pouvez le télécharger au format **PDF** prêt pour l'impression.
 
 ---
 

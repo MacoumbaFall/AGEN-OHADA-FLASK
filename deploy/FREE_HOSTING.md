@@ -19,7 +19,8 @@ Assurez-vous que les fichiers suivants existent à la racine du projet (déjà c
 
 ### 1. Créer la Base de Données (PostgreSQL)
 1.  Dans le dashboard Render, cliquez sur **New +** > **PostgreSQL**.
-2.  **Name**: `agen-ohada-db`.
+2.  **Name**: `dir
+`.
 3.  **Database**: `agen_ohada`.
 4.  **User**: `kobe` (ou autre).
 5.  **Region**: Choisissez `Frankfurt` (Europe) pour la rapidité.
@@ -43,7 +44,7 @@ Dans la section **Environment Variables** (avant de cliquer sur Deploy) :
 
 | Clé | Valeur |
 |-----|--------|
-| `PYTHON_VERSION` | `3.10.0` (ou votre version) |
+| `python --version` | `3.10.0` (ou votre version) |
 | `SECRET_KEY` | (Générez une longue chaîne aléatoire) |
 | `DATABASE_URL` | (Collez l'**Internal Database URL** copié à l'étape 1) |
 | `FLASK_APP` | `wsgi.py` |

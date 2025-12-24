@@ -1,5 +1,5 @@
-from flask import render_template, flash, redirect, url_for, request
-from flask_login import login_required
+from flask import render_template, flash, redirect, url_for, request, current_app
+from flask_login import login_required, current_user
 from app import db
 from app.actes import bp
 from app.actes.forms import TemplateForm, ActGenerationForm, TypeActeForm
@@ -8,7 +8,12 @@ from jinja2 import Template as JinjaTemplate
 from datetime import datetime
 from io import BytesIO
 import markdown2
+import os
+from werkzeug.utils import secure_filename
+from docxtpl import DocxTemplate
 from flask import send_file, make_response
+import shutil
+from pathlib import Path
 
 from app.decorators import role_required
 
@@ -78,17 +83,45 @@ def templates_index():
 @role_required('NOTAIRE', 'ADMIN')
 def template_create():
     form = TemplateForm()
-    if form.validate_on_submit():
-        template = Template(
-            nom=form.nom.data,
-            type_acte_id=form.type_acte.data.id,
-            description=form.description.data,
-            contenu=form.contenu.data
-        )
-        db.session.add(template)
-        db.session.commit()
-        flash('Modèle créé avec succès.', 'success')
-        return redirect(url_for('actes.templates_index'))
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                filename = None
+                is_docx = False
+                if form.docx_file.data:
+                    file = form.docx_file.data
+                    filename = secure_filename(file.filename)
+                    # Add timestamp to avoid collisions
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'templates_docx')
+                    if not os.path.exists(upload_folder):
+                        os.makedirs(upload_folder)
+                    file.save(os.path.join(upload_folder, filename))
+                    is_docx = True
+
+                template = Template(
+                    nom=form.nom.data,
+                    type_acte_id=form.type_acte.data.id,
+                    description=form.description.data,
+                    contenu=form.contenu.data if not is_docx else None,
+                    file_path=filename,
+                    is_docx=is_docx
+                )
+                db.session.add(template)
+                db.session.commit()
+                flash('Modèle créé avec succès.', 'success')
+                return redirect(url_for('actes.templates_index'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erreur base de données lors de la création: {str(e)}', 'error')
+                print(f"DATABASE ERROR in template_create: {str(e)}")
+        else:
+            # Log form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Erreur champ '{field}': {error}", 'error')
+                    print(f"FORM ERROR in template_create: {field} - {error}")
+                    
     return render_template('actes/template_form.html', form=form, title='Nouveau Modèle')
 
 @bp.route('/templates/<int:id>/edit', methods=['GET', 'POST'])
@@ -101,14 +134,27 @@ def template_edit(id):
         return redirect(url_for('actes.templates_index'))
     
     form = TemplateForm(obj=template)
-    if form.validate_on_submit():
-        template.nom = form.nom.data
-        template.type_acte_id = form.type_acte.data.id
-        template.description = form.description.data
-        template.contenu = form.contenu.data
-        db.session.commit()
-        flash('Modèle mis à jour.', 'success')
-        return redirect(url_for('actes.templates_index'))
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                template.nom = form.nom.data
+                template.type_acte_id = form.type_acte.data.id
+                template.description = form.description.data
+                template.contenu = form.contenu.data
+                db.session.commit()
+                flash('Modèle mis à jour.', 'success')
+                return redirect(url_for('actes.templates_index'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Erreur base de données lors de la mise à jour: {str(e)}', 'error')
+                print(f"DATABASE ERROR in template_edit: {str(e)}")
+        else:
+            # Log form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Erreur champ '{field}': {error}", 'error')
+                    print(f"FORM ERROR in template_edit: {field} - {error}")
+
     return render_template('actes/template_form.html', form=form, title='Modifier Modèle', template=template)
 
 @bp.route('/templates/<int:id>/delete', methods=['POST'])
@@ -136,7 +182,8 @@ def generate():
         # Context for Jinja2 substitution
         context = {
             'dossier': dossier,
-            'client': dossier.parties[0].client if dossier.parties else None, # Simplification: take first client
+            'template': template,
+            'client': dossier.parties[0].client if dossier.parties else None,
             'vendeur': next((p.client for p in dossier.parties if p.role_dans_acte.lower() == 'vendeur'), None),
             'acheteur': next((p.client for p in dossier.parties if p.role_dans_acte.lower() == 'acheteur'), None),
             'date': datetime.utcnow().strftime('%d/%m/%Y'),
@@ -145,29 +192,63 @@ def generate():
         }
         
         try:
-            jinja_template = JinjaTemplate(template.contenu)
-            rendered_markdown = jinja_template.render(context)
-            preview_content = markdown2.markdown(rendered_markdown, extras=["tables", "fenced-code-blocks"])
-            
-            if form.save.data:
-                # Save the act
+            if template.is_docx:
+                # DOCX Generation
+                template_path = os.path.join(current_app.root_path, 'static', 'templates_docx', template.file_path)
+                doc = DocxTemplate(template_path)
+                doc.render(context)
+                
+                output = BytesIO()
+                doc.save(output)
+                output.seek(0)
+                
+                # Special handling: DOCX cannot be previewed easily in HTML
+                # We save it as a draft and redirect to view/download
                 acte = Acte(
                     dossier_id=dossier.id,
                     type_acte=template.type_acte.nom,
                     type_acte_id=template.type_acte_id,
-                    contenu_html=preview_content,
                     statut='BROUILLON',
-                    version=1,
-                    date_signature=None # A init null
+                    version=1
                 )
                 db.session.add(acte)
                 db.session.commit()
-                flash('Acte sauvegardé avec succès.', 'success')
+                
+                # Save generated file
+                gen_filename = f"acte_{acte.id}.docx"
+                gen_folder = os.path.join(current_app.root_path, 'static', 'generated_actes')
+                if not os.path.exists(gen_folder):
+                    os.makedirs(gen_folder)
+                
+                with open(os.path.join(gen_folder, gen_filename), 'wb') as f:
+                    f.write(output.getvalue())
+                
+                flash('Acte Word généré avec succès.', 'success')
                 return redirect(url_for('actes.view_act', id=acte.id))
-            
-            flash('Génération réussie (Prévisualisation).', 'success')
+            else:
+                # Legacy Markdown Generation
+                jinja_template = JinjaTemplate(template.contenu)
+                rendered_markdown = jinja_template.render(context)
+                preview_content = markdown2.markdown(rendered_markdown, extras=["tables", "fenced-code-blocks"])
+                
+                if form.save.data:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte=template.type_acte.nom,
+                        type_acte_id=template.type_acte_id,
+                        contenu_html=preview_content,
+                        statut='BROUILLON',
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash('Acte sauvegardé avec succès.', 'success')
+                    return redirect(url_for('actes.view_act', id=acte.id))
+                
+                flash('Génération réussie (Prévisualisation).', 'success')
         except Exception as e:
             flash(f'Erreur lors de la génération: {str(e)}', 'error')
+            print(f"GENERATION ERROR: {str(e)}")
 
     return render_template('actes/generate.html', form=form, preview_content=preview_content, title='Générer un Acte')
 
@@ -179,9 +260,33 @@ def view_act(id):
     if not acte:
         flash('Acte non trouvé.', 'error')
         return redirect(url_for('dossiers.index'))
+    
     return render_template('actes/view.html', acte=acte)
 
 @bp.route('/download/<int:id>')
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def download_docx(id):
+    acte = db.session.get(Acte, id)
+    if not acte or not acte.dossier:
+        flash('Acte ou dossier non trouvé.', 'error')
+        return redirect(url_for('dossiers.index'))
+
+    filename = f"acte_{acte.id}.docx"
+    filepath = os.path.join(current_app.root_path, 'static', 'generated_actes', filename)
+    
+    if not os.path.exists(filepath):
+        flash('Fichier Word introuvable.', 'error')
+        return redirect(url_for('actes.view_act', id=id))
+        
+    return send_file(
+        filepath,
+        as_attachment=True,
+        download_name=f"acte_{acte.id}.docx",
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
+
+@bp.route('/download_pdf/<int:id>')
 @login_required
 @role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def download_pdf(id):
@@ -190,10 +295,12 @@ def download_pdf(id):
         flash('Acte non trouvé.', 'error')
         return redirect(url_for('dossiers.index'))
 
-    # Create PDF using xhtml2pdf
+    if not acte.contenu_html:
+        flash('La conversion PDF pour les fichiers Word n\'est pas encore disponible. Téléchargez le Word.', 'warning')
+        return redirect(url_for('actes.view_act', id=id))
+
+    # Existing PDF generation for HTML/Markdown
     from xhtml2pdf import pisa
-    
-    # Simple HTML wrapper for PDF
     html_content = f"""
     <html>
     <head>
@@ -207,19 +314,161 @@ def download_pdf(id):
     </body>
     </html>
     """
-    
     pdf_buffer = BytesIO()
     pisa_status = pisa.CreatePDF(html_content, dest=pdf_buffer)
-    
     if pisa_status.err:
         flash('Erreur lors de la génération du PDF.', 'error')
         return redirect(url_for('actes.view_act', id=id))
-        
     pdf_buffer.seek(0)
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"acte_{acte.id}.pdf", mimetype='application/pdf')
+# --- FINALISATION ET RÉVISION ---
+
+@bp.route('/review')
+@login_required
+@role_required('NOTAIRE')
+def review_dashboard():
+    # Only drafts for notaries
+    drafts = db.session.scalars(
+        db.select(Acte).filter_by(statut='BROUILLON').order_by(Acte.created_at.desc())
+    ).all()
+    return render_template('actes/review.html', acts=drafts)
+
+@bp.route('/<int:id>/edit_draft', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE')
+def edit_draft(id):
+    acte = db.session.get(Acte, id)
+    if not acte or acte.statut != 'BROUILLON':
+        flash('Acte introuvable ou déjà finalisé.', 'error')
+        return redirect(url_for('actes.review_dashboard'))
     
-    return send_file(
-        pdf_buffer,
-        as_attachment=True,
-        download_name=f"acte_{acte.id}.pdf",
-        mimetype='application/pdf'
-    )
+    from app.actes.forms import ActEditForm
+    form = ActEditForm(obj=acte)
+    
+    if form.validate_on_submit():
+        if acte.contenu_html and form.contenu_html.data:
+            acte.contenu_html = form.contenu_html.data
+            flash('Contenu mis à jour.', 'success')
+        
+        if form.docx_file.data:
+            file = form.docx_file.data
+            filename = f"acte_{acte.id}.docx" # Keep same filename for the act
+            upload_folder = os.path.join(current_app.root_path, 'static', 'generated_actes')
+            file.save(os.path.join(upload_folder, filename))
+            flash('Fichier Word remplacé avec succès.', 'success')
+            
+        db.session.commit()
+        return redirect(url_for('actes.view_act', id=acte.id))
+        
+    return render_template('actes/edit_draft.html', form=form, acte=acte)
+
+@bp.route('/<int:id>/finalize', methods=['POST'])
+@login_required
+@role_required('NOTAIRE')
+def finalize_act(id):
+    acte = db.session.get(Acte, id)
+    if not acte or acte.statut != 'BROUILLON':
+        flash('Action impossible.', 'error')
+        return redirect(url_for('actes.view_act', id=id))
+    
+    acte.statut = 'FINALISE'
+    acte.finalise_par_id = current_user.id
+    acte.date_finalisation = datetime.utcnow()
+    db.session.commit()
+    
+    flash('L\'acte a été finalisé et verrouillé.', 'success')
+    return redirect(url_for('actes.view_act', id=id))
+
+@bp.route('/<int:id>/sign', methods=['POST'])
+@login_required
+@role_required('NOTAIRE')
+def sign_act(id):
+    acte = db.session.get(Acte, id)
+    if not acte or acte.statut != 'FINALISE':
+        flash('Seul un acte finalisé peut être signé.', 'error')
+        return redirect(url_for('actes.view_act', id=id))
+    
+    # Placeholder for electronic signature logic
+    # In a real app, this would involve a certificate and a hash
+    acte.statut = 'SIGNE'
+    acte.date_signature = datetime.utcnow()
+    acte.signature_electronique = f"SIGNED-BY-{current_user.username}-{datetime.utcnow().isoformat()}"
+    db.session.commit()
+    
+    flash('L\'acte a été signé électroniquement.', 'success')
+    return redirect(url_for('actes.view_act', id=id))
+
+# --- ARCHIVAGE ET RÉPERTOIRE ---
+
+@bp.route('/repertoire')
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def repertoire_index():
+    # Formal Notarial Index: Only archived acts
+    archived_acts = db.session.scalars(
+        db.select(Acte).filter(Acte.numero_repertoire != None).order_by(Acte.numero_repertoire.desc())
+    ).all()
+    return render_template('actes/repertoire.html', acts=archived_acts)
+
+@bp.route('/dossier/<int:id>/archive', methods=['POST'])
+@login_required
+@role_required('NOTAIRE')
+def archive_dossier(id):
+    dossier = db.session.get(Dossier, id)
+    if not dossier or dossier.statut == 'ARCHIVE':
+        flash('Dossier introuvable ou déjà archivé.', 'error')
+        return redirect(url_for('dossiers.index'))
+    
+    # Selective Archiving: Filter for SIGNE acts
+    signed_acts = [a for a in dossier.actes if a.statut == 'SIGNE']
+    
+    if not signed_acts:
+        flash('Aucun acte signé à archiver dans ce dossier.', 'warning')
+        return redirect(url_for('dossiers.view', id=id))
+
+    try:
+        # Create archive folder
+        archive_root = Path(current_app.root_path) / 'static' / 'archives'
+        dossier_archive_path = archive_root / str(dossier.id)
+        dossier_archive_path.mkdir(parents=True, exist_ok=True)
+        
+        # Get next Repertoire number for this year
+        year = datetime.utcnow().year
+        max_rep = db.session.scalar(
+            db.select(db.func.max(Acte.numero_repertoire)).filter(
+                db.extract('year', Acte.date_archivage) == year
+            )
+        ) or 0
+        
+        # Archive signed acts
+        for acte in signed_acts:
+            filename = f"acte_{acte.id}.docx"
+            src_path = Path(current_app.root_path) / 'static' / 'generated_actes' / filename
+            
+            if src_path.exists():
+                # Move to archive vault
+                dest_path = dossier_archive_path / filename
+                shutil.move(str(src_path), str(dest_path))
+                
+                # Update Acte Metadata
+                max_rep += 1
+                acte.numero_repertoire = max_rep
+                acte.date_archivage = datetime.utcnow()
+                acte.archive_par_id = current_user.id
+                acte.statut = 'ARCHIVE'
+        
+        # Archive Accounting (Receipts / Invoices)
+        # We also move their PDFs if they exist
+        # Implementation note: For simplicity in this phase, we just mark the dossier as ARCHIVE
+        # and lock the files.
+        
+        dossier.statut = 'ARCHIVE'
+        db.session.commit()
+        
+        flash(f'Dossier archivé avec succès. {len(signed_acts)} actes ajoutés au répertoire.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erreur lors de l\'archivage: {str(e)}', 'error')
+        print(f"ARCHIVE ERROR: {e}")
+        
+    return redirect(url_for('dossiers.view', id=id))

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sm:flex sm:items-center mb-8">
+    <div class="sm:flex-auto">
+        <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">Répertoire Notarial</h1>
+        <p class="mt-2 text-sm text-gray-700">Index chronologique officiel des actes archivés de l'étude.</p>
+    </div>
+</div>
+
+<div class="bg-white shadow ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-300">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">N°
+                    Répertoire</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Archivage</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type d'Acte</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Dossier</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Signé par</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Actions</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+            {% for acte in acts %}
+            <tr>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-bold text-indigo-600 sm:pl-6">
+                    {{ acte.date_archivage.year }}-{{ "%04d" % acte.numero_repertoire }}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ acte.date_archivage.strftime('%d/%m/%Y
+                    %H:%M') }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 font-medium">{{ acte.type_acte }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {% if acte.dossier %}
+                    <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">{{
+                        acte.dossier.numero_dossier }}</a>
+                    {% endif %}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ acte.finalise_par.username if
+                    acte.finalise_par else '-' }}</td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <a href="{{ url_for('actes.view_act', id=acte.id) }}"
+                        class="text-indigo-600 hover:text-indigo-900">Consulter</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="py-12 text-center text-sm text-gray-500">
+                    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.03V12m0 0v5.97m0-5.97h5.97M12 12H6.03" />
+                    </svg>
+                    <p class="mt-2 font-medium text-gray-900">Le répertoire est vide</p>
+                    <p class="mt-1">Aucun acte n'a encore été archivé officiellement.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

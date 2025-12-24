@@ -92,13 +92,18 @@
         ('main.index', 'Accueil'),
         ('clients.index', 'Clients'),
         ('dossiers.index', 'Dossiers'),
-        ('actes.templates_index', 'Modèles'),
+        ('actes.templates_index', 'Actes'),
         ('formalites.index', 'Formalités'),
         ('comptabilite.index', 'Comptabilité')
         ] %}
 
         {% if current_user.role == 'ADMIN' %}
         {% set _ = navigation.append(('users.index', 'Utilisateurs')) %}
+        {% endif %}
+
+        {% if current_user.role == 'NOTAIRE' %}
+        {% set _ = navigation.append(('actes.review_dashboard', 'Validation Actes')) %}
+        {% set _ = navigation.append(('actes.repertoire_index', 'Répertoire')) %}
         {% endif %}
 
         <nav class="bg-white shadow">

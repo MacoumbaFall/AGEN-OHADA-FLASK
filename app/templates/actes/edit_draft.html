@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="md:flex md:items-center md:justify-between mb-8">
+    <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">Modifier le Projet d'Acte #{{
+            acte.id }}</h2>
+        <p class="mt-1 text-sm text-gray-500">Modification réservée au Notaire avant finalisation.</p>
+    </div>
+</div>
+
+<div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6 text-gray-900">
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            {% if acte.contenu_html %}
+            <!-- Markdown Editor -->
+            <div>
+                <label for="contenu_html" class="block text-sm font-medium leading-6 text-gray-900">Contenu de l'acte
+                    (Markdown)</label>
+                <div class="mt-2">
+                    {{ form.contenu_html(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1
+                    ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
+                    sm:leading-6", rows="15", id="markdown-editor") }}
+                </div>
+                <p class="mt-2 text-sm text-gray-500">Utilisez le Markdown pour la mise en forme.</p>
+            </div>
+            {% else %}
+            <!-- Word File Upload -->
+            <div class="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-semibold text-gray-900">Modification Word (.docx)</h3>
+                <p class="mt-1 text-sm text-gray-500">S'agissant d'un document Word, vous devez uploader une version
+                    révisée du fichier.</p>
+                <div class="mt-6 flex flex-col items-center">
+                    {{ form.docx_file(class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700
+                    hover:file:bg-indigo-100") }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="flex gap-4 pt-4">
+                <a href="{{ url_for('actes.view_act', id=acte.id) }}"
+                    class="px-3 py-2 text-sm font-semibold text-gray-900 bg-white rounded-md shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Annuler</a>
+                {{ form.submit(class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm
+                hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+                focus-visible:outline-indigo-600") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if acte.contenu_html %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+    var simplemde = new SimpleMDE({ element: document.getElementById("markdown-editor") });
+</script>
+{% endif %}
+{% endblock %}

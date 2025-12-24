@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sm:flex sm:items-center mb-8">
+    <div class="sm:flex-auto">
+        <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">Tableau de Bord Notaire</h1>
+        <p class="mt-2 text-sm text-gray-700">Liste des actes en attente de vérification et finalisation.</p>
+    </div>
+</div>
+
+<div class="bg-white shadow ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-300">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Acte ID
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Dossier</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Génération</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Actions</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+            {% for acte in acts %}
+            <tr>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">#{{ acte.id }}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <span
+                        class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
+                        {{ acte.type_acte }}
+                    </span>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    {% if acte.dossier %}
+                    <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}"
+                        class="text-indigo-600 hover:text-indigo-900">
+                        {{ acte.dossier.numero_dossier }}
+                    </a>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ acte.created_at.strftime('%d/%m/%Y
+                    %H:%M') }}</td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <div class="flex justify-end gap-3">
+                        <a href="{{ url_for('actes.view_act', id=acte.id) }}"
+                            class="text-gray-600 hover:text-gray-900">Consulter</a>
+                        <a href="{{ url_for('actes.edit_draft', id=acte.id) }}"
+                            class="text-indigo-600 hover:text-indigo-900">Modifier</a>
+                        <form action="{{ url_for('actes.finalize_act', id=acte.id) }}" method="POST"
+                            onsubmit="return confirm('Finaliser cet acte ? Il ne pourra plus être modifié.');">
+                            <button type="submit"
+                                class="text-green-600 hover:text-green-900 font-semibold">Finaliser</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="py-12 text-center text-sm text-gray-500">
+                    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="mt-2 font-medium text-gray-900">Aucun projet d'acte en attente</p>
+                    <p class="mt-1">Tous les actes générés par les clercs ont été traités.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

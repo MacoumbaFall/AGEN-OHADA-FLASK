@@ -8,11 +8,50 @@
         <p class="mt-1 text-sm text-gray-500">{{ acte.type_acte }} - Créé le {{ acte.created_at.strftime('%d/%m/%Y') }}
         </p>
     </div>
-    <div class="mt-4 flex md:ml-4 md:mt-0">
-        <a href="{{ url_for('actes.download_pdf', id=acte.id) }}"
-            class="ml-3 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-            Télécharger PDF
+    <div class="mt-4 flex md:ml-4 md:mt-0 gap-3">
+        <!-- Badge Statut -->
+        <span class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset 
+            {% if acte.statut == 'SIGNE' %} bg-green-50 text-green-700 ring-green-600/20
+            {% elif acte.statut == 'FINALISE' %} bg-blue-50 text-blue-700 ring-blue-600/20
+            {% else %} bg-yellow-50 text-yellow-700 ring-yellow-600/20 {% endif %}">
+            {{ acte.statut }}
+        </span>
+
+        {% if current_user.role == 'NOTAIRE' %}
+        {% if acte.statut == 'BROUILLON' %}
+        <a href="{{ url_for('actes.edit_draft', id=acte.id) }}"
+            class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Modifier
         </a>
+        <form action="{{ url_for('actes.finalize_act', id=acte.id) }}" method="POST"
+            onsubmit="return confirm('Voulez-vous finaliser cet acte ? Il sera verrouillé.');">
+            <button type="submit"
+                class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+                Finaliser
+            </button>
+        </form>
+        {% elif acte.statut == 'FINALISE' %}
+        <form action="{{ url_for('actes.sign_act', id=acte.id) }}" method="POST"
+            onsubmit="return confirm('Signer cet acte électroniquement ?');">
+            <button type="submit"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                Signer l'acte
+            </button>
+        </form>
+        {% endif %}
+        {% endif %}
+
+        {% if acte.contenu_html %}
+        <a href="{{ url_for('actes.download_pdf', id=acte.id) }}"
+            class="inline-flex items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700">
+            PDF
+        </a>
+        {% else %}
+        <a href="{{ url_for('actes.download_docx', id=acte.id) }}"
+            class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+            Word
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -20,52 +59,146 @@
     <!-- Contenu de l'acte -->
     <div class="lg:col-span-2">
         <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-            <div class="px-4 py-5 sm:p-6 prose max-w-none">
+            <div class="px-4 py-5 sm:p-6 prose max-w-none min-h-[800px]">
+                {% if acte.contenu_html %}
                 {{ acte.contenu_html | safe }}
+                {% else %}
+                <div id="docx-container" class="border border-gray-200 rounded-md bg-gray-50 overflow-auto p-2"
+                    style="height: 800px;">
+                    <div id="docx-loading" class="flex flex-col items-center justify-center h-full">
+                        <svg class="animate-spin h-10 w-10 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <p class="text-sm text-gray-500">Chargement de l'aperçu officiel...</p>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Informations complémentaires -->
-    <div class="space-y-6">
-        <!-- Dossier lié -->
-        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
-            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Dossier Lié</h3>
-            {% if acte.dossier %}
-            <div class="space-y-2">
-                <p class="text-sm font-medium text-indigo-600">
-                    <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">
-                        {{ acte.dossier.numero_dossier }}
+{% if not acte.contenu_html %}
+<!-- Scripts for Docx Preview -->
+<script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("docx-container");
+        const loading = document.getElementById("docx-loading");
+        const docxUrl = "{{ url_for('static', filename='generated_actes/acte_' ~ acte.id ~ '.docx') }}";
+
+        fetch(docxUrl)
+            .then(response => {
+                if (!response.ok) throw new Error("Erreur lors du chargement du fichier");
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                loading.style.display = 'none';
+                docx.renderAsync(arrayBuffer, container, container, {
+                    className: "docx",
+                    inWrapper: true,
+                    ignoreWidth: false,
+                    ignoreHeight: false,
+                    ignoreFonts: false,
+                    breakPages: true,
+                    ignoreLastRenderedPageBreak: false,
+                    experimental: true,
+                    trimXmlDeclaration: true,
+                    useBase64URL: true,
+                    useUaFont: false
+                }).then(x => console.log("Docx rendered"));
+            })
+            .catch(error => {
+                console.error(error);
+                loading.innerHTML = `
+                    <div class="text-center p-8">
+                        <p class="text-red-500 font-semibold">Impossible d'afficher l'aperçu.</p>
+                        <p class="text-sm text-gray-500 mt-2">Veuillez télécharger le document directement.</p>
+                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Télécharger</a>
+                    </div>
+                `;
+            });
+    });
+</script>
+<style>
+    .docx-wrapper {
+        padding: 20px !important;
+        background-color: #f3f4f6 !important;
+    }
+
+    .docx {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+        margin-bottom: 2rem !important;
+    }
+</style>
+{% endif %}
+
+<!-- Informations complémentaires -->
+<div class="space-y-6">
+    {% if acte.statut == 'ARCHIVE' %}
+    <div class="bg-indigo-50 shadow-sm ring-1 ring-indigo-700/10 sm:rounded-xl p-6 border-l-4 border-indigo-600">
+        <h3 class="text-base font-semibold leading-7 text-indigo-900">Information Archivage</h3>
+        <dl class="mt-4 space-y-4">
+            <div>
+                <dt class="text-sm font-medium text-indigo-700">Numéro de Répertoire</dt>
+                <dd class="mt-1 text-sm font-bold text-gray-900">{{ acte.date_archivage.year }}-{{ "%04d" %
+                    acte.numero_repertoire }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-indigo-700">Date d'Archivage</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ acte.date_archivage.strftime('%d/%m/%Y %H:%M') }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-indigo-700">Archivé par</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ acte.archive_par.username if acte.archive_par else '-' }}</dd>
+            </div>
+        </dl>
+    </div>
+    {% endif %}
+    <!-- Dossier lié -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+        <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Dossier Lié</h3>
+        {% if acte.dossier %}
+        <div class="space-y-2">
+            <p class="text-sm font-medium text-indigo-600">
+                <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">
+                    {{ acte.dossier.numero_dossier }}
+                </a>
+            </p>
+            <p class="text-sm text-gray-500">{{ acte.dossier.intitule }}</p>
+            <p class="text-xs text-gray-400">Statut: {{ acte.dossier.statut }}</p>
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-500 italic">Aucun dossier associé.</p>
+        {% endif %}
+    </div>
+
+    <!-- Parties du dossier -->
+    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+        <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Parties Concernées</h3>
+        {% if acte.dossier and acte.dossier.parties %}
+        <ul role="list" class="divide-y divide-gray-100">
+            {% for party in acte.dossier.parties %}
+            <li class="py-3">
+                <p class="text-sm font-medium text-gray-900">
+                    <a href="{{ url_for('clients.view', id=party.client.id) }}" class="hover:text-indigo-600">
+                        {{ party.client.nom }} {{ party.client.prenom or '' }}
                     </a>
                 </p>
-                <p class="text-sm text-gray-500">{{ acte.dossier.intitule }}</p>
-                <p class="text-xs text-gray-400">Statut: {{ acte.dossier.statut }}</p>
-            </div>
-            {% else %}
-            <p class="text-sm text-gray-500 italic">Aucun dossier associé.</p>
-            {% endif %}
-        </div>
-
-        <!-- Parties du dossier -->
-        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
-            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Parties Concernées</h3>
-            {% if acte.dossier and acte.dossier.parties %}
-            <ul role="list" class="divide-y divide-gray-100">
-                {% for party in acte.dossier.parties %}
-                <li class="py-3">
-                    <p class="text-sm font-medium text-gray-900">
-                        <a href="{{ url_for('clients.view', id=party.client.id) }}" class="hover:text-indigo-600">
-                            {{ party.client.nom }} {{ party.client.prenom or '' }}
-                        </a>
-                    </p>
-                    <p class="text-xs text-gray-500">{{ party.role_dans_acte }}</p>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-sm text-gray-500 italic">Aucune partie répertoriée.</p>
-            {% endif %}
-        </div>
+                <p class="text-xs text-gray-500">{{ party.role_dans_acte }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-sm text-gray-500 italic">Aucune partie répertoriée.</p>
+        {% endif %}
     </div>
+</div>
 </div>
 {% endblock %}

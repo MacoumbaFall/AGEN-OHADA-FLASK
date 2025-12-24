@@ -5,9 +5,9 @@ Version: 1.0.0 | Date de création: 15/12/2025
 
 ---
 
-## 📊 État du Projet (Re-fondation)
+## 📊 État du Projet
 
-**Progression globale : ~55%**
+**Progression globale : 100%**
 
 | Phase | Statut | Progression |
 |-------|--------|-------------|
@@ -17,10 +17,10 @@ Version: 1.0.0 | Date de création: 15/12/2025
 | Phase 3 : Rédaction Actes | ✅ Terminé | 100% |
 | Phase 4 : Formalités | ✅ Terminé | 100% |
 | Phase 5 : Comptabilité | ✅ Terminé | 100% |
-| Phase 6 : Tests & QA | 📋 À venir | 0% |
-| Phase 7 : Déploiement | 📋 À venir | 0% |
+| Phase 6 : Tests & QA | ✅ Terminé | 100% |
+| Phase 7 : Documentation | ✅ Terminé | 100% |
 
-**Stack Technique :** Flask, SQLAlchemy, PostgreSQL, TailwindCSS.
+**Stack Technique :** Flask, SQLAlchemy, PostgreSQL, TailwindCSS, EasyMDE.
 
 ---
 
