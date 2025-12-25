@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -7,7 +7,7 @@ ENV FLASK_APP wsgi.py
 ENV FLASK_ENV production
 
 # Install system dependencies
-# These are the same as the original working version, plus headers for lxml
+# Using packages compatible with Debian Bookworm (default for python:3.12-slim)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
@@ -28,13 +28,13 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
+RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Expose port (Koyeb usually expects 8000)
+# Expose port
 EXPOSE 8000
 
 # Start Gunicorn
