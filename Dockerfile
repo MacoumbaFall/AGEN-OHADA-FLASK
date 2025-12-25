@@ -7,8 +7,7 @@ ENV FLASK_APP wsgi.py
 ENV FLASK_ENV production
 
 # Install system dependencies
-# Added libxml2-dev and libxslt1-dev for lxml (required by python-docx-template)
-# Added fontconfig and other libs for WeasyPrint/xhtml2pdf
+# These are required by WeasyPrint, Psycopg2, and lxml
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
@@ -16,9 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
     libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libharfbuzz0b \
-    libjpeg-dev \
+    libjpeg62-turbo-dev \
     libopenjp2-7-dev \
     shared-mime-info \
     libpq-dev \
@@ -35,7 +34,7 @@ WORKDIR /app
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt --verbose
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
