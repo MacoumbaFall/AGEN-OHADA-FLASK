@@ -10,89 +10,87 @@ Bienvenue dans le guide d'utilisation de **AGEN-OHADA**, votre solution de gesti
 5. [Rédaction d'Actes](#5-rédaction-dactes)
 6. [Suivi des Formalités](#6-suivi-des-formalités)
 7. [Comptabilité](#7-comptabilité)
+8. [Archivage et Répertoire](#8-archivage-et-répertoire)
 
 ---
 
 ## 1. Accès et Connexion
 
-Pour accéder à l'application, ouvrez votre navigateur web et rendez-vous sur l'adresse fournie par votre administrateur (ex: `http://localhost:5000` ou `https://notaire.votre-domaine.com`).
+Pour accéder à l'application, ouvrez votre navigateur web et rendez-vous sur l'adresse fournie par votre administrateur (ex: `https://votre-etude.koyeb.app`).
 
-*   **Identifiant** : Votre nom d'utilisateur (ex: `admin`).
+*   **Identifiant** : Votre nom d'utilisateur.
 *   **Mot de passe** : Votre mot de passe sécurisé.
-
-> En cas d'oubli de mot de passe, contactez l'administrateur système.
 
 ---
 
 ## 2. Tableau de Bord
 
-Une fois connecté, vous arrivez sur le **Tableau de Bord**. C'est votre centre de commande.
-*   **Indicateurs clés** : Visualisez en un coup d'œil le nombre de dossiers actifs, les formalités en attente, et les soldes de trésorerie.
-*   **Actions Rapides** : Des boutons vous permettent de créer instantanément un *Nouveau Dossier*, un *Nouveau Client* ou une *Nouvelle Formalité*.
-*   **Menu Latéral / Navigation** : Utilisez la barre de navigation (en haut ou sur le côté mobile) pour accéder aux différents modules.
+Le **Tableau de Bord** affiche les statistiques en temps réel :
+*   Nombre total de clients et dossiers actifs.
+*   Formalités en attente de traitement.
+*   Accès rapide aux modules via la barre de navigation.
 
 ---
 
 ## 3. Gestion des Clients
 
-Ce module vous permet de gérer votre carnet d'adresses.
-*   **Liste des clients** : Recherche rapide par nom, téléphone ou email.
-*   **Nouveau Client** : Cliquez sur "Nouveau Client". Vous pouvez choisir entre :
-    *   **Personne Physique** : Nom, Prénom, Date de naissance, etc.
-    *   **Personne Morale** : Raison sociale, Forme juridique, RCCM, etc.
-*   **Fiche Client** : Consultez l'historique complet d'un client (dossiers associés, factures, coordonnées).
+*   **Personnes Physiques / Morales** : Enregistrez vos clients avec toutes les informations légales nécessaires.
+*   **Recherche** : Filtrage instantané par nom dans la liste des clients.
+*   **Dossiers liés** : Visualisez tous les dossiers en cours pour un client spécifique depuis sa fiche.
 
 ---
 
 ## 4. Gestion des Dossiers
 
-Le cœur de votre activité. Un dossier regroupe tous les éléments d'une affaire (Clients, Actes, Formalités, Factures).
-*   **Créer un Dossier** : Donnez un nom au dossier et sélectionnez un type (ex: Vente Immobilière). Le numéro de dossier est généré automatiquement (ex: `DOS-2025-001`).
-*   **Ajouter des Parties** : Dans l'onglet "Parties", associez des clients existants au dossier en leur attribuant un rôle (Vendeur, Acheteur, etc.).
-*   **Suivi** : Changez le statut du dossier (Ouvert, En Cours, En Attente, Clôturé) pour suivre son avancement.
+Un dossier centralise toutes les informations d'une affaire.
+*   **Ouverture** : Attribuez un intitulé et un type de dossier.
+*   **Parties** : Associez les clients (Vendeur, Acheteur, Prêteur, etc.) via l'onglet "Parties".
+*   **Workflow** : Suivez l'état (Ouvert, Signé, Archivé).
 
 ---
 
 ## 5. Rédaction d'Actes
 
-Générez vos documents juridiques automatiquement à partir de modèles prédéfinis.
+Le module **Actes** permet de générer des documents à partir de modèles.
 
-*   **Modèles (Templates)** : Accédez à la bibliothèque via le menu "Modèles". Vous pouvez créer vos propres documents en utilisant :
-    *   **Markdown** pour le formatage (gras, listes, tableaux).
-    *   **Jinja2** pour les variables dynamiques (ex: `{{ client.nom }}`).
-*   **Éditeur Intelligent** : L'éditeur intègre une aide sur le côté droit. Cliquez sur une variable (ex: "Nom du Client") pour l'insérer à l'endroit du curseur.
-*   **Enregistrement** : Le bouton "Enregistrer" synchronise automatiquement votre saisie. En cas d'erreur de saisie ou de base de données, un message d'alerte rouge s'affichera pour vous guider.
-*   **Générer un Acte** :
-    1.  Utilisez le bouton **"Générer un Acte"** dans la barre de navigation ou via un Dossier.
-    2.  Sélectionnez le Dossier concerné et le Modèle à utiliser.
-    3.  Cliquez sur **"Prévisualiser"** pour voir le résultat avec les données réelles.
-    4.  Si tout est correct, cliquez sur **"Valider et Sauvegarder"**.
-*   **Téléchargement** : Une fois l'acte sauvegardé, vous pouvez le télécharger au format **PDF** prêt pour l'impression.
+### Modèles de documents
+Vous pouvez utiliser deux types de modèles :
+*   **Modèles Word (.docx)** : Téléchargez vos propres fichiers Word avec des balises de fusion (ex: `{{ client.nom }}`). Le système les remplira automatiquement.
+*   **Modèles Markdown** : Éditeur de texte intégré pour des actes simples et rapides.
+
+### Validation par le Notaire
+Une fois un acte généré par un clerc, il apparaît dans le module **"Validation Actes"** pour le Notaire.
+*   Le Notaire peut réviser l'acte, le modifier ou le valider.
+*   Une fois validé, l'acte peut être signé électroniquement (enregistrement du hash).
 
 ---
 
 ## 6. Suivi des Formalités
 
-Ne ratez plus aucune échéance administrative.
-*   **Enregistrer une Formalité** : Pour chaque dossier, notez les démarches à effectuer (Enregistrement, Cadastre, Journal Officiel).
-*   **Calculateur de Frais** : L'outil estime automatiquement les coûts basés sur les barèmes OHADA (bientôt disponible pour tous les types).
-*   **Suivi des Statuts** : Marquez les formalités comme "Dépôt effectué", "Retourné", ou "Terminé".
-*   **Alertes** : Les formalités en retard apparaissent en évidence sur votre tableau de bord.
+Gérez les étapes post-signature :
+*   **Calculateur OHADA** : Estimation automatique des droits d'enregistrement et émoluments.
+*   **Suivi des dépôts** : Enregistrez les dates de dépôt et de retour des actes auprès des administrations.
 
 ---
 
 ## 7. Comptabilité
 
-Gestion financière rigoureuse séparant les fonds de l'office et les fonds des clients.
-*   **Plan Comptable** : Liste des comptes (Banque, Caisse, Clients, Honoraires...). Distinction stricte entre "Compte Office" et "Compte Client".
-*   **Reçus** : Émettez un reçu pour tout encaissement. L'écriture comptable est générée automatiquement.
-*   **Factures** : Créez des factures d'honoraires et de frais.
-*   **Rapports** :
-    *   **Balance Générale** : État des débits et crédits par compte.
-    *   **Grand Livre** : Historique détaillé de toutes les opérations.
-    *   **Journal** : Liste chronologique des écritures.
+Gestion rigoureuse des flux financiers :
+*   **Reçus et Factures** : Génération automatique lors de l'encaissement ou de la facturation.
+*   **Séparation des fonds** : Gestion distincte entre la caisse de l'Office et le compte Client.
+*   **Rapports** : Balance générale, Grand Livre et Journal disponibles en temps réel.
+
+---
+
+## 8. Archivage et Répertoire
+
+Une fois l'affaire terminée, le dossier peut être archivé.
+*   **Processus d'archivage** : Seuls les actes signés et finalisés sont transférés vers les archives sécurisées.
+*   **Numéro de Répertoire** : Un numéro unique annuel est attribué à chaque acte archivé.
+*   **Répertoire Notarial** : Consultez la liste officielle de tous les actes archivés par année dans le module **"Répertoire"**.
+*   **Sécurité** : Un dossier archivé devient verrouillé (lecture seule) pour garantir l'intégrité des données.
 
 ---
 
 ## Besoin d'aide technique ?
-Pour toute question technique, bug ou demande d'amélioration, veuillez contacter le support technique ou consulter le guide de déploiement pour les administrateurs.
+Consultez la version de l'application en bas de page. Pour tout support, contactez l'administrateur de l'étude.
