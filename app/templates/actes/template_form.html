@@ -156,6 +156,17 @@
                     </div>
                 </div>
 
+                <div>
+                    <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Général</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <span onclick="insertVar('{{ '{{' }} date {{ '}}' }}')"
+                            class="variable-badge inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-700/10">Date
+                            du jour</span>
+                        <span onclick="insertVar('{{ '{{' }} now.year {{ '}}' }}')"
+                            class="variable-badge inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-700/10">Année</span>
+                    </div>
+                </div>
+
                 <div class="pt-4 border-t border-gray-100">
                     <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Formatage Rapide</h4>
                     <div class="flex flex-wrap gap-2">

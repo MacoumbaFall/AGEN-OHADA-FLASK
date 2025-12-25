@@ -92,5 +92,35 @@ Une fois l'affaire terminée, le dossier peut être archivé.
 
 ---
 
+## 9. Variables Dynamiques
+
+Pour automatiser vos actes, vous pouvez utiliser des balises que le système remplacera par les données réelles du dossier.
+
+### Utilisation
+*   **Dans les modèles Word (.docx)** : Insérez la variable entre doubles accolades, par exemple : `{{ client.nom }}`.
+*   **Dans les modèles Markdown** : Utilisez également la syntaxe `{{ client.nom }}`.
+
+### Liste des variables disponibles
+
+| Catégorie | Variable | Description |
+|-----------|----------|-------------|
+| **Dossier** | `{{ dossier.numero_dossier }}` | Numéro unique du dossier (ex: DOS-2025-001) |
+| | `{{ dossier.intitule }}` | Objet ou titre de l'affaire |
+| | `{{ dossier.date_ouverture }}` | Date d'ouverture du dossier |
+| **Client Principal** | `{{ client.nom }}` | Nom de famille du client principal |
+| | `{{ client.prenom }}` | Prénom du client principal |
+| | `{{ client.adresse }}` | Adresse complète du client |
+| **Vendeur** | `{{ vendeur.nom }}` | Nom du client ayant le rôle "Vendeur" |
+| | `{{ vendeur.prenom }}` | Prénom du vendeur |
+| **Acheteur** | `{{ acheteur.nom }}` | Nom du client ayant le rôle "Acheteur" |
+| | `{{ acheteur.prenom }}` | Prénom de l'acheteur |
+| **Général** | `{{ date }}` | Date du jour (format JJ/MM/AAAA) |
+| | `{{ now.year }}` | Année en cours |
+
+> [!TIP]
+> Si une variable est vide dans le dossier (ex: pas d'acheteur défini), elle apparaîtra vide dans l'acte généré. Assurez-vous de bien remplir les "Parties" du dossier avant de générer l'acte.
+
+---
+
 ## Besoin d'aide technique ?
 Consultez la version de l'application en bas de page. Pour tout support, contactez l'administrateur de l'étude.
