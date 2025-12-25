@@ -202,29 +202,46 @@ def generate():
                 doc.save(output)
                 output.seek(0)
                 
-                # Special handling: DOCX cannot be previewed easily in HTML
-                # We save it as a draft and redirect to view/download
-                acte = Acte(
-                    dossier_id=dossier.id,
-                    type_acte=template.type_acte.nom,
-                    type_acte_id=template.type_acte_id,
-                    statut='BROUILLON',
-                    version=1
-                )
-                db.session.add(acte)
-                db.session.commit()
-                
-                # Save generated file
-                gen_filename = f"acte_{acte.id}.docx"
-                gen_folder = os.path.join(current_app.root_path, 'static', 'generated_actes')
-                if not os.path.exists(gen_folder):
-                    os.makedirs(gen_folder)
-                
-                with open(os.path.join(gen_folder, gen_filename), 'wb') as f:
-                    f.write(output.getvalue())
-                
-                flash('Acte Word généré avec succès.', 'success')
-                return redirect(url_for('actes.view_act', id=acte.id))
+                if form.save.data:
+                    # Final Save
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte=template.type_acte.nom,
+                        type_acte_id=template.type_acte_id,
+                        statut='BROUILLON',
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    
+                    gen_filename = f"acte_{acte.id}.docx"
+                    gen_folder = os.path.join(current_app.root_path, 'static', 'generated_actes')
+                    if not os.path.exists(gen_folder):
+                        os.makedirs(gen_folder)
+                    
+                    with open(os.path.join(gen_folder, gen_filename), 'wb') as f:
+                        f.write(output.getvalue())
+                    
+                    flash('Acte Word généré et sauvegardé avec succès.', 'success')
+                    return redirect(url_for('actes.view_act', id=acte.id))
+                else:
+                    # Temporary Preview
+                    temp_folder = os.path.join(current_app.root_path, 'static', 'temp_previews')
+                    if not os.path.exists(temp_folder):
+                        os.makedirs(temp_folder)
+                    
+                    # Cleanup old temp files (simple: remove if > 1 hour)
+                    # For production, a more robust cleanup script is recommended
+                    
+                    temp_filename = f"preview_{current_user.id}_{datetime.utcnow().strftime('%H%M%S')}.docx"
+                    temp_path = os.path.join(temp_folder, temp_filename)
+                    with open(temp_path, 'wb') as f:
+                        f.write(output.getvalue())
+                    
+                    preview_docx_url = url_for('static', filename=f'temp_previews/{temp_filename}')
+                    flash('Génération Word réussie (Prévisualisation).', 'success')
+                    return render_template('actes/generate.html', form=form, preview_docx_url=preview_docx_url, title='Générer un Acte')
+
             else:
                 # Legacy Markdown Generation
                 jinja_template = JinjaTemplate(template.contenu)

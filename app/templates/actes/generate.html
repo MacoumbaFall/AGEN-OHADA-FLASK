@@ -41,7 +41,7 @@
                 <div class="pt-2 flex gap-4">
                     {{ form.submit(class="flex-1 justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold
                     text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer") }}
-                    {% if preview_content %}
+                    {% if preview_content or preview_docx_url %}
                     {{ form.save(class="flex-1 justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold
                     text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2
                     focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer") }}
@@ -60,6 +60,21 @@
             <div class="flex-1 p-4 border border-gray-200 rounded-md bg-gray-50 overflow-auto prose max-w-none">
                 {{ preview_content | safe }}
             </div>
+            {% elif preview_docx_url %}
+            <div id="docx-container" class="flex-1 border border-gray-200 rounded-md bg-gray-50 overflow-auto"
+                style="height: 600px;">
+                <div id="docx-loading" class="flex flex-col items-center justify-center h-full">
+                    <svg class="animate-spin h-8 w-8 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg"
+                        fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <p class="text-xs text-gray-500">Chargement de l'aperçu Word...</p>
+                </div>
+            </div>
             {% else %}
             <div class="flex-1 flex items-center justify-center p-12 border-2 border-dashed border-gray-300 rounded-md">
                 <span class="text-gray-500 italic">Sélectionnez un dossier et un modèle pour générer l'acte.</span>
@@ -68,4 +83,46 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if preview_docx_url %}
+<script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("docx-container");
+        const loading = document.getElementById("docx-loading");
+        const docxUrl = "{{ preview_docx_url }}";
+
+        fetch(docxUrl)
+            .then(response => {
+                if (!response.ok) throw new Error("Erreur de chargement");
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                loading.style.display = 'none';
+                docx.renderAsync(arrayBuffer, container, container, {
+                    className: "docx",
+                    inWrapper: true
+                }).then(x => console.log("Word preview rendered"));
+            })
+            .catch(error => {
+                console.error(error);
+                loading.innerHTML = `<p class="text-red-500 text-xs">Aperçu indisponible.</p>`;
+            });
+    });
+</script>
+<style>
+    .docx-wrapper {
+        padding: 10px !important;
+        background-color: #f3f4f6 !important;
+    }
+
+    .docx {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+        width: 100% !important;
+    }
+</style>
+{% endif %}
 {% endblock %}
