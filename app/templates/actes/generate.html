@@ -95,21 +95,39 @@
         const loading = document.getElementById("docx-loading");
         const docxUrl = "{{ preview_docx_url }}";
 
+        console.log("Fetching Word preview from:", docxUrl);
         fetch(docxUrl)
             .then(response => {
-                if (!response.ok) throw new Error("Erreur de chargement");
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error("Erreur de chargement (" + response.status + ")");
+                }
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
+                console.log("ArrayBuffer received, size:", arrayBuffer.byteLength);
                 loading.style.display = 'none';
-                docx.renderAsync(arrayBuffer, container, container, {
+                docx.renderAsync(arrayBuffer, container, null, {
                     className: "docx",
-                    inWrapper: true
-                }).then(x => console.log("Word preview rendered"));
+                    inWrapper: true,
+                    ignoreWidth: false,
+                    ignoreHeight: false,
+                    ignoreFonts: false,
+                    breakPages: true,
+                    ignoreLastRenderedPageBreak: false,
+                    experimental: true,
+                    trimXmlDeclaration: true,
+                    useBase64URL: true,
+                    useUaFont: false
+                }).then(x => console.log("Word preview successfully rendered"))
+                    .catch(e => console.error("Docx-preview error:", e));
             })
             .catch(error => {
-                console.error(error);
-                loading.innerHTML = `<p class="text-red-500 text-xs">Aperçu indisponible.</p>`;
+                console.error("Preview fetch/render error:", error);
+                loading.innerHTML = `<div class="p-4 text-center">
+                    <p class="text-red-500 text-xs font-semibold">Aperçu indisponible.</p>
+                    <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
+                </div>`;
             });
     });
 </script>
