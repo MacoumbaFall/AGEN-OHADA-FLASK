@@ -7,25 +7,20 @@ ENV FLASK_APP wsgi.py
 ENV FLASK_ENV production
 
 # Install system dependencies
-# These are required by WeasyPrint, Psycopg2, and lxml
+# These are the same as the original working version, plus headers for lxml
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     libffi-dev \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf-2.0-0 \
     libharfbuzz0b \
-    libjpeg62-turbo-dev \
+    libjpeg-dev \
     libopenjp2-7-dev \
     shared-mime-info \
     libpq-dev \
     libxml2-dev \
     libxslt1-dev \
-    zlib1g-dev \
-    fontconfig \
-    libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and set work directory
