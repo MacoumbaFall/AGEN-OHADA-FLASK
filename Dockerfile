@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -32,9 +32,9 @@ RUN pip install --upgrade pip && \
 # Copy project files
 COPY . .
 
-# Expose port (Koyeb usually expects 8000 but we can make it flexible)
+# Expose port (Koyeb usually expects 8000)
 EXPOSE 8000
 
 # Start Gunicorn
-# Using 0.0.0.0:8000 but letting Koyeb override it if needed
+# Bind to 0.0.0.0:8000. Koyeb will map this to the public port.
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "wsgi:application"]
