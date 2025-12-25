@@ -81,18 +81,81 @@
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Informations complémentaires -->
+    <div class="space-y-6">
+        {% if acte.statut == 'ARCHIVE' %}
+        <div class="bg-indigo-50 shadow-sm ring-1 ring-indigo-700/10 sm:rounded-xl p-6 border-l-4 border-indigo-600">
+            <h3 class="text-base font-semibold leading-7 text-indigo-900">Information Archivage</h3>
+            <dl class="mt-4 space-y-4">
+                <div>
+                    <dt class="text-sm font-medium text-indigo-700">Numéro de Répertoire</dt>
+                    <dd class="mt-1 text-sm font-bold text-gray-900">{{ acte.date_archivage.year }}-{{ "%04d" %
+                        acte.numero_repertoire }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-indigo-700">Date d'Archivage</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ acte.date_archivage.strftime('%d/%m/%Y %H:%M') }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-indigo-700">Archivé par</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ acte.archive_par.username if acte.archive_par else '-' }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        {% endif %}
+        <!-- Dossier lié -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Dossier Lié</h3>
+            {% if acte.dossier %}
+            <div class="space-y-2">
+                <p class="text-sm font-medium text-indigo-600">
+                    <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">
+                        {{ acte.dossier.numero_dossier }}
+                    </a>
+                </p>
+                <p class="text-sm text-gray-500">{{ acte.dossier.intitule }}</p>
+                <p class="text-xs text-gray-400">Statut: {{ acte.dossier.statut }}</p>
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 italic">Aucun dossier associé.</p>
+            {% endif %}
+        </div>
+
+        <!-- Parties du dossier -->
+        <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
+            <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Parties Concernées</h3>
+            {% if acte.dossier and acte.dossier.parties %}
+            <ul role="list" class="divide-y divide-gray-100">
+                {% for party in acte.dossier.parties %}
+                <li class="py-3">
+                    <p class="text-sm font-medium text-gray-900">
+                        <a href="{{ url_for('clients.view', id=party.client.id) }}" class="hover:text-indigo-600">
+                            {{ party.client.nom }} {{ party.client.prenom or '' }}
+                        </a>
+                    </p>
+                    <p class="text-xs text-gray-500">{{ party.role_dans_acte }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-sm text-gray-500 italic">Aucune partie répertoriée.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 {% if not acte.contenu_html %}
-<!-- Scripts for Docx Preview -->
 <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.18/dist/docx-preview.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
         const loading = document.getElementById("docx-loading");
 
-        // Define path based on status
         let docxUrl;
         {% if acte.statut == 'ARCHIVE' %}
         docxUrl = "{{ url_for('static', filename='archives/' ~ acte.dossier_id ~ '/acte_' ~ acte.id ~ '.docx') }}";
@@ -100,40 +163,32 @@
         docxUrl = "{{ url_for('static', filename='generated_actes/acte_' ~ acte.id ~ '.docx') }}";
         {% endif %}
 
-        console.log("Fetching Word act from:", docxUrl);
+        console.log("Viewing Word act:", docxUrl);
         fetch(docxUrl)
             .then(response => {
-                if (!response.ok) {
-                    console.error("Fetch failed with status:", response.status);
-                    throw new Error("Erreur lors du chargement du fichier (" + response.status + ")");
-                }
+                if (!response.ok) throw new Error("Erreur HTTP " + response.status);
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
-                console.log("ArrayBuffer received, size:", arrayBuffer.byteLength);
                 loading.style.display = 'none';
                 docx.renderAsync(arrayBuffer, container, null, {
                     className: "docx",
                     inWrapper: true,
-                    ignoreWidth: false,
-                    ignoreHeight: false,
-                    ignoreFonts: false,
                     breakPages: true,
-                    ignoreLastRenderedPageBreak: false,
-                    experimental: true,
-                    trimXmlDeclaration: true,
-                    useBase64URL: true,
-                    useUaFont: false
-                }).then(x => console.log("Docx successfully rendered"))
-                    .catch(e => console.error("Docx-preview rendering error:", e));
+                    experimental: true
+                }).then(() => console.log("Success"))
+                    .catch(err => {
+                        console.error("Render error:", err);
+                        loading.innerHTML = `<p class="text-red-500 text-xs text-center p-4">Erreur de rendu: ${err.message}</p>`;
+                    });
             })
             .catch(error => {
-                console.error("Preview error:", error);
+                console.error("Fetch error:", error);
                 loading.innerHTML = `
                     <div class="text-center p-8">
-                        <p class="text-red-500 font-semibold">Impossible d'afficher l'aperçu.</p>
-                        <p class="text-xs text-gray-500 mt-2">${error.message}</p>
-                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Télécharger</a>
+                        <p class="text-red-500 font-semibold text-xs">Le document n'a pas pu être chargé.</p>
+                        <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
+                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">Télécharger</a>
                     </div>
                 `;
             });
@@ -151,67 +206,4 @@
     }
 </style>
 {% endif %}
-
-<!-- Informations complémentaires -->
-<div class="space-y-6">
-    {% if acte.statut == 'ARCHIVE' %}
-    <div class="bg-indigo-50 shadow-sm ring-1 ring-indigo-700/10 sm:rounded-xl p-6 border-l-4 border-indigo-600">
-        <h3 class="text-base font-semibold leading-7 text-indigo-900">Information Archivage</h3>
-        <dl class="mt-4 space-y-4">
-            <div>
-                <dt class="text-sm font-medium text-indigo-700">Numéro de Répertoire</dt>
-                <dd class="mt-1 text-sm font-bold text-gray-900">{{ acte.date_archivage.year }}-{{ "%04d" %
-                    acte.numero_repertoire }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-indigo-700">Date d'Archivage</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ acte.date_archivage.strftime('%d/%m/%Y %H:%M') }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm font-medium text-indigo-700">Archivé par</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ acte.archive_par.username if acte.archive_par else '-' }}</dd>
-            </div>
-        </dl>
-    </div>
-    {% endif %}
-    <!-- Dossier lié -->
-    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
-        <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Dossier Lié</h3>
-        {% if acte.dossier %}
-        <div class="space-y-2">
-            <p class="text-sm font-medium text-indigo-600">
-                <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">
-                    {{ acte.dossier.numero_dossier }}
-                </a>
-            </p>
-            <p class="text-sm text-gray-500">{{ acte.dossier.intitule }}</p>
-            <p class="text-xs text-gray-400">Statut: {{ acte.dossier.statut }}</p>
-        </div>
-        {% else %}
-        <p class="text-sm text-gray-500 italic">Aucun dossier associé.</p>
-        {% endif %}
-    </div>
-
-    <!-- Parties du dossier -->
-    <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
-        <h3 class="text-base font-semibold leading-7 text-gray-900 mb-4">Parties Concernées</h3>
-        {% if acte.dossier and acte.dossier.parties %}
-        <ul role="list" class="divide-y divide-gray-100">
-            {% for party in acte.dossier.parties %}
-            <li class="py-3">
-                <p class="text-sm font-medium text-gray-900">
-                    <a href="{{ url_for('clients.view', id=party.client.id) }}" class="hover:text-indigo-600">
-                        {{ party.client.nom }} {{ party.client.prenom or '' }}
-                    </a>
-                </p>
-                <p class="text-xs text-gray-500">{{ party.role_dans_acte }}</p>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-sm text-gray-500 italic">Aucune partie répertoriée.</p>
-        {% endif %}
-    </div>
-</div>
-</div>
 {% endblock %}

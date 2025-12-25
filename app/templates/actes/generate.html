@@ -88,44 +88,36 @@
 {% block extra_js %}
 {% if preview_docx_url %}
 <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.18/dist/docx-preview.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
         const loading = document.getElementById("docx-loading");
         const docxUrl = "{{ preview_docx_url }}";
 
-        console.log("Fetching Word preview from:", docxUrl);
+        console.log("Rendering Word preview:", docxUrl);
         fetch(docxUrl)
             .then(response => {
-                if (!response.ok) {
-                    console.error("Fetch failed with status:", response.status);
-                    throw new Error("Erreur de chargement (" + response.status + ")");
-                }
+                if (!response.ok) throw new Error("Erreur HTTP " + response.status);
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
-                console.log("ArrayBuffer received, size:", arrayBuffer.byteLength);
                 loading.style.display = 'none';
                 docx.renderAsync(arrayBuffer, container, null, {
                     className: "docx",
                     inWrapper: true,
-                    ignoreWidth: false,
-                    ignoreHeight: false,
-                    ignoreFonts: false,
                     breakPages: true,
-                    ignoreLastRenderedPageBreak: false,
-                    experimental: true,
-                    trimXmlDeclaration: true,
-                    useBase64URL: true,
-                    useUaFont: false
-                }).then(x => console.log("Word preview successfully rendered"))
-                    .catch(e => console.error("Docx-preview error:", e));
+                    experimental: true
+                }).then(() => console.log("Success"))
+                    .catch(err => {
+                        console.error("Render error:", err);
+                        loading.innerHTML = `<p class="text-red-500 text-xs">Erreur de rendu: ${err.message}</p>`;
+                    });
             })
             .catch(error => {
-                console.error("Preview fetch/render error:", error);
+                console.error("Fetch error:", error);
                 loading.innerHTML = `<div class="p-4 text-center">
-                    <p class="text-red-500 text-xs font-semibold">Aperçu indisponible.</p>
+                    <p class="text-red-500 text-xs font-semibold">Le fichier n'a pas pu être chargé.</p>
                     <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
                 </div>`;
             });
@@ -140,6 +132,7 @@
     .docx {
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
         width: 100% !important;
+        margin-bottom: 10px;
     }
 </style>
 {% endif %}
