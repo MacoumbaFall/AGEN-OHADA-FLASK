@@ -1,13 +1,13 @@
 # Plan de Travail Détaillé - AGEN-OHADA-FLASK
 **Application de Gestion d'Étude Notariale OHADA (Version Flask)**
 
-Version: 1.0.0 | Date de création: 15/12/2025
+Version: 1.1.0 | Date de mise à jour: 25/12/2025
 
 ---
 
 ## 📊 État du Projet
 
-**Progression globale : 100%**
+**Progression globale : 100% (Version Production)**
 
 | Phase | Statut | Progression |
 |-------|--------|-------------|
@@ -18,7 +18,9 @@ Version: 1.0.0 | Date de création: 15/12/2025
 | Phase 4 : Formalités | ✅ Terminé | 100% |
 | Phase 5 : Comptabilité | ✅ Terminé | 100% |
 | Phase 6 : Tests & QA | ✅ Terminé | 100% |
-| Phase 7 : Documentation | ✅ Terminé | 100% |
+| Phase 7 : Déploiement & Aide | ✅ Terminé | 100% |
+| Phase 8 : Archivage & Signature | ✅ Terminé | 100% |
+| Phase 9 : Word Templates & Répertoire | ✅ Terminé | 100% |
 
 **Stack Technique :** Flask, SQLAlchemy, PostgreSQL, TailwindCSS, EasyMDE.
 
@@ -243,18 +245,45 @@ Gestion du Compte Office et Compte Client avec double-entry bookkeeping.
 
 ---
 
-## Phase 7 : Déploiement
+## Phase 7 : Déploiement, Aide & Polissage - ✅ TERMINÉ
 
 ### Objectif
-Passage en production.
+Mise en ligne et support utilisateur.
 
 ### Tâches
--   [x] Configuration Gunicorn/Nginx (`deploy/` folder).
--   [x] Sécurisation (HTTPS, Headers) - via `deploy/README.md` & `config.py` (ProductionConfig).
--   [x] Backup S3/Local (`scripts/backup.py`).
+- [x] Configuration Koyeb (Dockerfile, Procfile).
+- [x] Déploiement Cloud avec Neon DB.
+- [x] Création du module d'Aide en ligne (integrated manual).
+- [x] Affichage dynamique de la version (v1.1.0).
+
+---
+
+## Phase 8 : Archivage et Signature Électronique - ✅ TERMINÉ
+
+### Objectif
+Sécurisation des actes finalisés et gestion du répertoire.
+
+### Tâches
+- [x] Implémentation du workflow de validation par le Notaire.
+- [x] Système de signature électronique (enregistrement du hash).
+- [x] Processus d'archivage automatique vers stockage sécurisé.
+- [x] Attribution d'un numéro de répertoire annuel unique.
+
+---
+
+## Phase 9 : Support Word Templates (.docx) - ✅ TERMINÉ
+
+### Objectif
+Permettre la génération d'actes à partir de documents Word complexes.
+
+### Tâches
+- [x] Intégration de la librairie `docxtpl`.
+- [x] Upload et gestion des fichiers modèles Word.
+- [x] Fusion dynamique des champs avec les données du dossier.
+- [x] Gestion des dépendances système pour PDF (WeasyPrint).
 
 ## Conclusion
-Le projet est prêt pour le déploiement en production. Suivre les instructions dans `deploy/README.md`.
+L'application est en production (v1.1.0) sur Koyeb, intégrant toutes les fonctionnalités du cahier des charges initial et les extensions avancées (Word, Archivage).
 
 ---
 
