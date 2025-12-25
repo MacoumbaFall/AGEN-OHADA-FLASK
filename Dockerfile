@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -7,9 +7,10 @@ ENV FLASK_APP wsgi.py
 ENV FLASK_ENV production
 
 # Install system dependencies
-# Using packages compatible with Debian Bookworm (default for python:3.12-slim)
+# Added pkg-config and libcairo2-dev for pycairo (required by xhtml2pdf/svglib)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    pkg-config \
     python3-dev \
     libffi-dev \
     libpango-1.0-0 \
@@ -21,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     libxml2-dev \
     libxslt1-dev \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and set work directory
