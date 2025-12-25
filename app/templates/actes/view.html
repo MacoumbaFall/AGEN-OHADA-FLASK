@@ -91,16 +91,28 @@
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
         const loading = document.getElementById("docx-loading");
-        const docxUrl = "{{ url_for('static', filename='generated_actes/acte_' ~ acte.id ~ '.docx') }}";
 
+        // Define path based on status
+        let docxUrl;
+        {% if acte.statut == 'ARCHIVE' %}
+        docxUrl = "{{ url_for('static', filename='archives/' ~ acte.dossier_id ~ '/acte_' ~ acte.id ~ '.docx') }}";
+        {% else %}
+        docxUrl = "{{ url_for('static', filename='generated_actes/acte_' ~ acte.id ~ '.docx') }}";
+        {% endif %}
+
+        console.log("Fetching Word act from:", docxUrl);
         fetch(docxUrl)
             .then(response => {
-                if (!response.ok) throw new Error("Erreur lors du chargement du fichier");
+                if (!response.ok) {
+                    console.error("Fetch failed with status:", response.status);
+                    throw new Error("Erreur lors du chargement du fichier (" + response.status + ")");
+                }
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
+                console.log("ArrayBuffer received, size:", arrayBuffer.byteLength);
                 loading.style.display = 'none';
-                docx.renderAsync(arrayBuffer, container, container, {
+                docx.renderAsync(arrayBuffer, container, null, {
                     className: "docx",
                     inWrapper: true,
                     ignoreWidth: false,
@@ -112,14 +124,15 @@
                     trimXmlDeclaration: true,
                     useBase64URL: true,
                     useUaFont: false
-                }).then(x => console.log("Docx rendered"));
+                }).then(x => console.log("Docx successfully rendered"))
+                    .catch(e => console.error("Docx-preview rendering error:", e));
             })
             .catch(error => {
-                console.error(error);
+                console.error("Preview error:", error);
                 loading.innerHTML = `
                     <div class="text-center p-8">
                         <p class="text-red-500 font-semibold">Impossible d'afficher l'aperçu.</p>
-                        <p class="text-sm text-gray-500 mt-2">Veuillez télécharger le document directement.</p>
+                        <p class="text-xs text-gray-500 mt-2">${error.message}</p>
                         <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Télécharger</a>
                     </div>
                 `;
