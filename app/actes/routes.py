@@ -93,7 +93,7 @@ def template_create():
                     filename = secure_filename(file.filename)
                     # Add timestamp to avoid collisions
                     filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
-                    upload_folder = os.path.join(current_app.root_path, 'static', 'templates_docx')
+                    upload_folder = os.path.join(current_app.static_folder, 'templates_docx')
                     if not os.path.exists(upload_folder):
                         os.makedirs(upload_folder)
                     file.save(os.path.join(upload_folder, filename))
@@ -194,9 +194,19 @@ def generate():
         try:
             if template.is_docx:
                 # DOCX Generation
-                template_path = os.path.join(current_app.root_path, 'static', 'templates_docx', template.file_path)
-                doc = DocxTemplate(template_path)
-                doc.render(context)
+                # Use static_folder for more robust path resolution in production
+                template_path = os.path.join(current_app.static_folder, 'templates_docx', template.file_path)
+                
+                if not os.path.exists(template_path):
+                    flash(f"Erreur : Le fichier modèle '{template.file_path}' est introuvable sur le serveur. Il a peut-être été supprimé lors d'un redémarrage. Veuillez le re-télécharger dans la gestion des modèles.", 'error')
+                    return redirect(url_for('actes.generate'))
+                
+                try:
+                    doc = DocxTemplate(template_path)
+                    doc.render(context)
+                except Exception as e:
+                    flash(f"Erreur lors de la lecture du modèle Word : {str(e)}", 'error')
+                    return redirect(url_for('actes.generate'))
                 
                 output = BytesIO()
                 doc.save(output)
@@ -290,7 +300,11 @@ def download_docx(id):
         return redirect(url_for('dossiers.index'))
 
     filename = f"acte_{acte.id}.docx"
-    filepath = os.path.join(current_app.root_path, 'static', 'generated_actes', filename)
+    filepath = os.path.join(current_app.static_folder, 'generated_actes', filename)
+    
+    # If not found in generated_actes, check archives
+    if not os.path.exists(filepath):
+        filepath = os.path.join(current_app.static_folder, 'archives', str(acte.dossier_id), filename)
     
     if not os.path.exists(filepath):
         flash('Fichier Word introuvable.', 'error')
@@ -445,7 +459,7 @@ def archive_dossier(id):
 
     try:
         # Create archive folder
-        archive_root = Path(current_app.root_path) / 'static' / 'archives'
+        archive_root = Path(current_app.static_folder) / 'archives'
         dossier_archive_path = archive_root / str(dossier.id)
         dossier_archive_path.mkdir(parents=True, exist_ok=True)
         
@@ -460,7 +474,7 @@ def archive_dossier(id):
         # Archive signed acts
         for acte in signed_acts:
             filename = f"acte_{acte.id}.docx"
-            src_path = Path(current_app.root_path) / 'static' / 'generated_actes' / filename
+            src_path = Path(current_app.static_folder) / 'generated_actes' / filename
             
             if src_path.exists():
                 # Move to archive vault
