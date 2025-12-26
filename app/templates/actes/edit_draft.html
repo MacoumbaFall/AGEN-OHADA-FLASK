@@ -27,19 +27,58 @@
                 <p class="mt-2 text-sm text-gray-500">Utilisez le Markdown pour la mise en forme.</p>
             </div>
             {% else %}
-            <!-- Word File Upload -->
-            <div class="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <h3 class="mt-2 text-sm font-semibold text-gray-900">Modification Word (.docx)</h3>
-                <p class="mt-1 text-sm text-gray-500">S'agissant d'un document Word, vous devez uploader une version
-                    révisée du fichier.</p>
-                <div class="mt-6 flex flex-col items-center">
-                    {{ form.docx_file(class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700
-                    hover:file:bg-indigo-100") }}
+            <!-- Word File Upload and Preview -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-6">
+                    <div class="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-semibold text-gray-900">Modification Word (.docx)</h3>
+                        <p class="mt-1 text-sm text-gray-500">S'agissant d'un document Word, vous devez uploader une
+                            version
+                            révisée du fichier.</p>
+                        <div class="mt-6 flex flex-col items-center">
+                            {{ form.docx_file(class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50
+                            file:text-indigo-700
+                            hover:file:bg-indigo-100") }}
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 p-4 rounded-md">
+                        <h4 class="text-xs font-bold text-indigo-700 uppercase mb-2">Instructions</h4>
+                        <ul class="text-xs text-indigo-600 space-y-1 list-disc pl-4">
+                            <li>Téléchargez la version actuelle si besoin.</li>
+                            <li>Modifiez-la localement.</li>
+                            <li>Uploadez le nouveau fichier ci-dessus.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Live Preview of CURRENT version -->
+                <div class="flex flex-col h-full border border-gray-200 rounded-md bg-white">
+                    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-gray-600 uppercase">Aperçu de la version actuelle</span>
+                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}"
+                            class="text-xs text-indigo-600 hover:text-indigo-900 font-medium">Télécharger</a>
+                    </div>
+                    <div id="docx-container" class="flex-1 overflow-auto bg-gray-100"
+                        style="min-height: 500px; height: 500px;">
+                        <div id="docx-loading" class="flex flex-col items-center justify-center h-full">
+                            <svg class="animate-spin h-8 w-8 text-indigo-600 mb-2" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            <p class="text-xs text-gray-500">Chargement de l'aperçu...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -61,5 +100,50 @@
 <script>
     var simplemde = new SimpleMDE({ element: document.getElementById("markdown-editor") });
 </script>
+{% else %}
+<script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/docx-preview.min.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("docx-container");
+        const loading = document.getElementById("docx-loading");
+        const docxUrl = "{{ url_for('actes.download_docx', id=acte.id) }}";
+
+        console.log("Rendering current Word version:", docxUrl);
+        fetch(docxUrl)
+            .then(response => {
+                if (!response.ok) throw new Error("Erreur HTTP " + response.status);
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => {
+                if (arrayBuffer.byteLength < 100) throw new Error("Fichier vide ou corrompu");
+                return docx.renderAsync(arrayBuffer, container, container);
+            })
+            .then(() => {
+                loading.style.display = 'none';
+                console.log("Render success");
+            })
+            .catch(error => {
+                console.error("Fetch/Render error:", error);
+                loading.innerHTML = `<div class="p-4 text-center">
+                    <p class="text-red-500 text-xs font-semibold">L'aperçu n'a pas pu être chargé.</p>
+                    <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
+                </div>`;
+            });
+    });
+</script>
+<style>
+    .docx-wrapper {
+        padding: 15px !important;
+        background-color: #f3f4f6 !important;
+        width: 100% !important;
+    }
+
+    .docx {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+        width: 100% !important;
+        margin-bottom: 10px;
+    }
+</style>
 {% endif %}
 {% endblock %}

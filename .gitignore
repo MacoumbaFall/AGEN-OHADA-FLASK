@@ -70,3 +70,22 @@ deploy/packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# App Data / Generated Files
+app/static/generated_actes/*.docx
+app/static/temp_previews/*.docx
+app/static/archives/
+app/static/templates_docx/*.docx
+!app/static/templates_docx/MODELE_TEST_NOTAIRE.docx
+
+# Temporary debug files
+test_debug.txt
+test_debug_log.txt
+test_debug_utf8.txt
+test_output.txt
+test_create_account_error.txt
+debug_preview_path.py
+setup_test_data.py
+
+# DB
+app.db

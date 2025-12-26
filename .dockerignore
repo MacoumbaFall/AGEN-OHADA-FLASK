@@ -15,11 +15,19 @@ ENV
 htmlcov
 tests/
 backups/
-*.log
+# Exclude local data
+app.db
+app/static/generated_actes/*.docx
+app/static/temp_previews/*.docx
+app/static/archives/
+app/static/templates_docx/*.docx
+!app/static/templates_docx/MODELE_TEST_NOTAIRE.docx
+
+# Exclude other CI/CD files
+Dockerfile.local
+docker-compose.yml
+.agent/
+.vscode/
+.idea/
 *.txt
 !requirements.txt
-Dockerfile
-.dockerignore
-vercel.json
-render-build.sh
-Procfile

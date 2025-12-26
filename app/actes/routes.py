@@ -240,8 +240,16 @@ def generate():
                     if not os.path.exists(temp_folder):
                         os.makedirs(temp_folder)
                     
-                    # Cleanup old temp files (simple: remove if > 1 hour)
-                    # For production, a more robust cleanup script is recommended
+                    # Cleanup old temp files (older than 1 hour)
+                    import time
+                    try:
+                        now_ts = time.time()
+                        for f in os.listdir(temp_folder):
+                            f_path = os.path.join(temp_folder, f)
+                            if os.path.isfile(f_path) and os.stat(f_path).st_mtime < now_ts - 3600:
+                                os.remove(f_path)
+                    except Exception as cleanup_err:
+                        print(f"Temp Cleanup error: {cleanup_err}")
                     
                     temp_filename = f"preview_{current_user.id}_{datetime.utcnow().strftime('%H%M%S')}.docx"
                     temp_path = os.path.join(temp_folder, temp_filename)

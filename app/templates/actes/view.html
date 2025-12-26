@@ -151,8 +151,8 @@
 
 {% block extra_js %}
 {% if not acte.contenu_html %}
-<script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
+<script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/docx-preview.min.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
