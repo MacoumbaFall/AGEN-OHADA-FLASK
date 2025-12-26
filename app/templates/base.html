@@ -117,18 +117,18 @@
 
                             {% set nav_start = [] %}
                             {% set nav_end = [] %}
-                            {% set after_formalites = false %}
+                            {% set after_comptabilite = false %}
 
                             {% for item in navigation %}
-                            {% if not after_formalites %}
+                            {% if not after_comptabilite %}
                             {% set _ = nav_start.append(item) %}
                             {% else %}
                             {% set _ = nav_end.append(item) %}
                             {% endif %}
-                            {% if item[1] == 'Formalités' %}{% set after_formalites = true %}{% endif %}
+                            {% if item[1] == 'Comptabilité' %}{% set after_comptabilite = true %}{% endif %}
                             {% endfor %}
 
-                            {# First part: Accueil, Clients, Dossiers, Formalités #}
+                            {# First part: Accueil, Clients, Dossiers, Formalités, Comptabilité #}
                             {% for endpoint, label in nav_start %}
                             {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0])
                             if endpoint != 'main.index' else request.endpoint == 'main.index') %}
@@ -218,7 +218,7 @@
             <!-- Mobile menu -->
             <div class="sm:hidden" id="mobile-menu" x-show="mobileMenuOpen" x-cloak>
                 <div class="space-y-1 pb-3 pt-2">
-                    {# Mobile First part: Accueil, Clients, Dossiers, Formalités #}
+                    {# Mobile First part: Accueil, Clients, Dossiers, Formalités, Comptabilité #}
                     {% for endpoint, label in nav_start %}
                     {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
                     endpoint != 'main.index' else request.endpoint == 'main.index') %}
@@ -246,7 +246,7 @@
                             Notarial</a>
                     </div>
 
-                    {# Mobile Second part: Comptabilité, Archives, etc. #}
+                    {# Mobile Second part: Archives, etc. #}
                     {% for endpoint, label in nav_end %}
                     {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
                     endpoint != 'main.index' else request.endpoint == 'main.index') %}
