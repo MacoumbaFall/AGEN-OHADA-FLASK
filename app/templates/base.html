@@ -91,16 +91,14 @@
         {% set navigation = [
         ('main.index', 'Accueil'),
         ('clients.index', 'Clients'),
-        ('dossiers.index', 'Dossiers')
+        ('dossiers.index', 'Dossiers'),
+        ('formalites.index', 'Formalités')
         ] %}
-
-        {# Add Archives link #}
-        {% set _ = navigation.append(('dossiers.archives', 'Archives')) %}
 
         {# Actes will be handled as a separate dropdown below #}
 
-        {% set _ = navigation.append(('formalites.index', 'Formalités')) %}
         {% set _ = navigation.append(('comptabilite.index', 'Comptabilité')) %}
+        {% set _ = navigation.append(('dossiers.archives', 'Archives')) %}
 
         {% if current_user.role == 'ADMIN' %}
         {% set _ = navigation.append(('users.index', 'Utilisateurs')) %}
@@ -119,18 +117,18 @@
 
                             {% set nav_start = [] %}
                             {% set nav_end = [] %}
-                            {% set after_dossiers = false %}
+                            {% set after_formalites = false %}
 
                             {% for item in navigation %}
-                            {% if item[1] == 'Archives' %}{% set after_dossiers = true %}{% endif %}
-                            {% if not after_dossiers %}
+                            {% if not after_formalites %}
                             {% set _ = nav_start.append(item) %}
                             {% else %}
                             {% set _ = nav_end.append(item) %}
                             {% endif %}
+                            {% if item[1] == 'Formalités' %}{% set after_formalites = true %}{% endif %}
                             {% endfor %}
 
-                            {# First part: Accueil, Clients, Dossiers #}
+                            {# First part: Accueil, Clients, Dossiers, Formalités #}
                             {% for endpoint, label in nav_start %}
                             {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0])
                             if endpoint != 'main.index' else request.endpoint == 'main.index') %}
@@ -175,7 +173,7 @@
                                 </div>
                             </div>
 
-                            {# Second part: Archives, Formalités, Comptabilité, etc. #}
+                            {# Second part: Comptabilité, Archives, etc. #}
                             {% for endpoint, label in nav_end %}
                             {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0])
                             if endpoint != 'main.index' else request.endpoint == 'main.index') %}
@@ -220,7 +218,7 @@
             <!-- Mobile menu -->
             <div class="sm:hidden" id="mobile-menu" x-show="mobileMenuOpen" x-cloak>
                 <div class="space-y-1 pb-3 pt-2">
-                    {# Mobile First part: Accueil, Clients, Dossiers #}
+                    {# Mobile First part: Accueil, Clients, Dossiers, Formalités #}
                     {% for endpoint, label in nav_start %}
                     {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
                     endpoint != 'main.index' else request.endpoint == 'main.index') %}
@@ -248,7 +246,7 @@
                             Notarial</a>
                     </div>
 
-                    {# Mobile Second part: Archives, Formalités, etc. #}
+                    {# Mobile Second part: Comptabilité, Archives, etc. #}
                     {% for endpoint, label in nav_end %}
                     {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
                     endpoint != 'main.index' else request.endpoint == 'main.index') %}
