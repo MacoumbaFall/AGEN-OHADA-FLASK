@@ -117,7 +117,21 @@
                         </div>
                         <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
 
-                            {% for endpoint, label in navigation %}
+                            {% set nav_start = [] %}
+                            {% set nav_end = [] %}
+                            {% set after_dossiers = false %}
+
+                            {% for item in navigation %}
+                            {% if item[1] == 'Archives' %}{% set after_dossiers = true %}{% endif %}
+                            {% if not after_dossiers %}
+                            {% set _ = nav_start.append(item) %}
+                            {% else %}
+                            {% set _ = nav_end.append(item) %}
+                            {% endif %}
+                            {% endfor %}
+
+                            {# First part: Accueil, Clients, Dossiers #}
+                            {% for endpoint, label in nav_start %}
                             {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0])
                             if endpoint != 'main.index' else request.endpoint == 'main.index') %}
                             <a href="{{ url_for(endpoint) }}"
@@ -160,6 +174,16 @@
                                         Notarial</a>
                                 </div>
                             </div>
+
+                            {# Second part: Archives, Formalités, Comptabilité, etc. #}
+                            {% for endpoint, label in nav_end %}
+                            {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0])
+                            if endpoint != 'main.index' else request.endpoint == 'main.index') %}
+                            <a href="{{ url_for(endpoint) }}"
+                                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {{ 'border-indigo-500 text-gray-900' if is_active else 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700' }}">
+                                {{ label }}
+                            </a>
+                            {% endfor %}
                         </div>
                     </div>
 
@@ -196,7 +220,8 @@
             <!-- Mobile menu -->
             <div class="sm:hidden" id="mobile-menu" x-show="mobileMenuOpen" x-cloak>
                 <div class="space-y-1 pb-3 pt-2">
-                    {% for endpoint, label in navigation %}
+                    {# Mobile First part: Accueil, Clients, Dossiers #}
+                    {% for endpoint, label in nav_start %}
                     {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
                     endpoint != 'main.index' else request.endpoint == 'main.index') %}
                     <a href="{{ url_for(endpoint) }}"
@@ -222,6 +247,16 @@
                             class="block py-2 pl-6 pr-4 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700">Répertoire
                             Notarial</a>
                     </div>
+
+                    {# Mobile Second part: Archives, Formalités, etc. #}
+                    {% for endpoint, label in nav_end %}
+                    {% set is_active = request.endpoint and (request.endpoint.startswith(endpoint.split('.')[0]) if
+                    endpoint != 'main.index' else request.endpoint == 'main.index') %}
+                    <a href="{{ url_for(endpoint) }}"
+                        class="block border-l-4 py-2 pl-3 pr-4 text-base font-medium {{ 'border-indigo-500 bg-indigo-50 text-indigo-700' if is_active else 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700' }}">
+                        {{ label }}
+                    </a>
+                    {% endfor %}
                     <div class="border-t border-gray-200 pt-4 pb-3">
                         <div class="flex items-center px-4">
                             <div class="flex-shrink-0">
