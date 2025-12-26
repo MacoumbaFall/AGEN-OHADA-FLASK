@@ -88,7 +88,7 @@
 {% block extra_js %}
 {% if preview_docx_url %}
 <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.18/dist/docx-preview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
@@ -102,20 +102,15 @@
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
+                if (arrayBuffer.byteLength < 100) throw new Error("Fichier vide ou corrompu");
+                return docx.renderAsync(arrayBuffer, container, container);
+            })
+            .then(() => {
                 loading.style.display = 'none';
-                docx.renderAsync(arrayBuffer, container, null, {
-                    className: "docx",
-                    inWrapper: true,
-                    breakPages: true,
-                    experimental: true
-                }).then(() => console.log("Success"))
-                    .catch(err => {
-                        console.error("Render error:", err);
-                        loading.innerHTML = `<p class="text-red-500 text-xs">Erreur de rendu: ${err.message}</p>`;
-                    });
+                console.log("Success");
             })
             .catch(error => {
-                console.error("Fetch error:", error);
+                console.error("Fetch/Render error:", error);
                 loading.innerHTML = `<div class="p-4 text-center">
                     <p class="text-red-500 text-xs font-semibold">Le fichier n'a pas pu être chargé.</p>
                     <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
@@ -127,6 +122,7 @@
     .docx-wrapper {
         padding: 10px !important;
         background-color: #f3f4f6 !important;
+        width: 100% !important;
     }
 
     .docx {

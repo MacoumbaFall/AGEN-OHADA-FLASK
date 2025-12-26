@@ -59,12 +59,14 @@
     <!-- Contenu de l'acte -->
     <div class="lg:col-span-2">
         <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-            <div class="px-4 py-5 sm:p-6 prose max-w-none min-h-[800px]">
+            <div class="px-4 py-5 sm:p-6 min-h-[800px]">
                 {% if acte.contenu_html %}
-                {{ acte.contenu_html | safe }}
+                <div class="prose max-w-none">
+                    {{ acte.contenu_html | safe }}
+                </div>
                 {% else %}
                 <div id="docx-container" class="border border-gray-200 rounded-md bg-gray-50 overflow-auto p-2"
-                    style="height: 800px;">
+                    style="height: 800px; min-height: 800px;">
                     <div id="docx-loading" class="flex flex-col items-center justify-center h-full">
                         <svg class="animate-spin h-10 w-10 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg"
                             fill="none" viewBox="0 0 24 24">
@@ -150,7 +152,7 @@
 {% block extra_js %}
 {% if not acte.contenu_html %}
 <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.18/dist/docx-preview.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const container = document.getElementById("docx-container");
@@ -163,32 +165,31 @@
         docxUrl = "{{ url_for('static', filename='generated_actes/acte_' ~ acte.id ~ '.docx') }}";
         {% endif %}
 
-        console.log("Viewing Word act:", docxUrl);
+        console.log("Loading Word Act:", docxUrl);
         fetch(docxUrl)
             .then(response => {
                 if (!response.ok) throw new Error("Erreur HTTP " + response.status);
                 return response.arrayBuffer();
             })
             .then(arrayBuffer => {
+                if (arrayBuffer.byteLength < 100) throw new Error("Fichier vide ou corrompu");
+
+                return docx.renderAsync(arrayBuffer, container, container);
+            })
+            .then(() => {
                 loading.style.display = 'none';
-                docx.renderAsync(arrayBuffer, container, null, {
-                    className: "docx",
-                    inWrapper: true,
-                    breakPages: true,
-                    experimental: true
-                }).then(() => console.log("Success"))
-                    .catch(err => {
-                        console.error("Render error:", err);
-                        loading.innerHTML = `<p class="text-red-500 text-xs text-center p-4">Erreur de rendu: ${err.message}</p>`;
-                    });
+                console.log("Render success");
             })
             .catch(error => {
-                console.error("Fetch error:", error);
+                console.error("Docx Preview Error:", error);
                 loading.innerHTML = `
-                    <div class="text-center p-8">
-                        <p class="text-red-500 font-semibold text-xs">Le document n'a pas pu être chargé.</p>
-                        <p class="text-[10px] text-gray-400 mt-1">${error.message}</p>
-                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">Télécharger</a>
+                    <div class="text-center p-8 bg-red-50 rounded-md border border-red-200">
+                        <svg class="mx-auto h-12 w-12 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p class="text-red-700 font-semibold mb-2">L'aperçu n'a pas pu être généré.</p>
+                        <p class="text-xs text-red-500 mb-4">${error.message}</p>
+                        <a href="{{ url_for('actes.download_docx', id=acte.id) }}" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">Télécharger le document</a>
                     </div>
                 `;
             });
@@ -196,13 +197,18 @@
 </script>
 <style>
     .docx-wrapper {
-        padding: 20px !important;
+        padding: 30px !important;
         background-color: #f3f4f6 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
     }
 
     .docx {
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-        margin-bottom: 2rem !important;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+        background-color: white !important;
+        padding: 40px !important;
+        margin: 0 auto !important;
     }
 </style>
 {% endif %}
