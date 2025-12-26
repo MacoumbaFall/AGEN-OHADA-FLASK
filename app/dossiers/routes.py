@@ -145,11 +145,40 @@ def delete(id):
         flash('Dossier non trouvé.', 'error')
         return redirect(url_for('dossiers.index'))
     
-    # Check for crucial data before delete? 
-    # For now, we allow delete, assuming CASCADE handles parties/actes/etc 
-    # or we trust the user.
-    
     db.session.delete(dossier)
     db.session.commit()
     flash('Dossier supprimé avec succès.', 'success')
     return redirect(url_for('dossiers.index'))
+
+@bp.route('/archives')
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def archives():
+    page = request.args.get('page', 1, type=int)
+    num = request.args.get('num', '', type=str)
+    title = request.args.get('title', '', type=str)
+    client_name = request.args.get('client', '', type=str)
+    type_dos = request.args.get('type', '', type=str)
+
+    query = select(Dossier).where(Dossier.statut == 'ARCHIVE').order_by(Dossier.created_at.desc())
+    
+    if num:
+        query = query.where(Dossier.numero_dossier.ilike(f"%{num}%"))
+    if title:
+        query = query.where(Dossier.intitule.ilike(f"%{title}%"))
+    if type_dos:
+        query = query.where(Dossier.type_dossier == type_dos)
+    if client_name:
+        # Join with parties and clients to search by client name
+        query = query.join(Dossier.parties).join(DossierParty.client).where(
+            or_(
+                Client.nom.ilike(f"%{client_name}%"),
+                Client.prenom.ilike(f"%{client_name}%")
+            )
+        )
+        
+    pagination = db.paginate(query, page=page, per_page=10, error_out=False)
+    dossiers = pagination.items
+
+    return render_template('dossiers/archives.html', dossiers=dossiers, pagination=pagination, 
+                           num=num, title=title, client=client_name, type_dos=type_dos)

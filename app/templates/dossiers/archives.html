@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+
+    <!-- Header Section -->
+    <div class="sm:flex sm:items-center justify-between">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-bold text-gray-900">Archives des Dossiers</h1>
+            <p class="mt-2 text-sm text-gray-700">Recherche multi-critères dans les dossiers archivés de l'étude.</p>
+        </div>
+    </div>
+
+    <!-- Multi-Criteria Search Bar -->
+    <div class="mt-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <form method="get" action="{{ url_for('dossiers.archives') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label for="num" class="block text-xs font-medium text-gray-500 uppercase">N° Dossier</label>
+                <input type="text" name="num" id="num" value="{{ num }}"
+                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                    placeholder="Ex: DOS-2025-001">
+            </div>
+            <div>
+                <label for="title" class="block text-xs font-medium text-gray-500 uppercase">Intitulé</label>
+                <input type="text" name="title" id="title" value="{{ title }}"
+                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                    placeholder="Mots clés...">
+            </div>
+            <div>
+                <label for="client" class="block text-xs font-medium text-gray-500 uppercase">Client</label>
+                <input type="text" name="client" id="client" value="{{ client }}"
+                    class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                    placeholder="Nom ou prénom...">
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit"
+                    class="flex-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    Rechercher
+                </button>
+                {% if num or title or client %}
+                <a href="{{ url_for('dossiers.archives') }}"
+                    class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-500 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    Effacer
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Section -->
+    <div class="mt-6 flex flex-col">
+        <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="py-3.5 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6">
+                                    Dossier</th>
+                                <th scope="col"
+                                    class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Clients</th>
+                                <th scope="col"
+                                    class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type</th>
+                                <th scope="col"
+                                    class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ouvert le</th>
+                                <th scope="col"
+                                    class="px-3 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Responsable</th>
+                                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            {% for dossier in dossiers %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                    <div class="flex flex-col">
+                                        <a href="{{ url_for('dossiers.view', id=dossier.id) }}"
+                                            class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline">
+                                            {{ dossier.numero_dossier }}
+                                        </a>
+                                        <span class="text-gray-500 text-xs mt-0.5">{{ dossier.intitule }}</span>
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    <div class="flex flex-col gap-1">
+                                        {% for party in dossier.parties %}
+                                        <span class="text-gray-900">{{ party.client.nom }} {{ party.client.prenom or ''
+                                            }}</span>
+                                        {% else %}
+                                        <span class="text-gray-400 italic">Aucun client</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    <span
+                                        class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                        {{ dossier.type_dossier or 'Non spécifié' }}
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    {{ dossier.date_ouverture.strftime('%d/%m/%Y') }}
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    {{ dossier.responsable.username if dossier.responsable else '-' }}
+                                </td>
+                                <td
+                                    class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                    <a href="{{ url_for('dossiers.view', id=dossier.id) }}"
+                                        class="text-indigo-600 hover:text-indigo-900">Voir Détails</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-sm text-gray-500">
+                                    <p>Aucun dossier archivé ne correspond à votre recherche.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div
+        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-b-lg">
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Affichage de <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 }}</span>
+                    à <span class="font-medium">{{ [pagination.page * pagination.per_page, pagination.total] | min
+                        }}</span> sur <span class="font-medium">{{ pagination.total }}</span> résultats
+                </p>
+            </div>
+            <div>
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    {% if pagination.has_prev %}
+                    <a href="{{ url_for('dossiers.archives', page=pagination.prev_num, num=num, title=title, client=client) }}"
+                        class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <span class="sr-only">Précédent</span>
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+
+                    {% for p in pagination.iter_pages() %}
+                    {% if p %}
+                    <a href="{{ url_for('dossiers.archives', page=p, num=num, title=title, client=client) }}"
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold {{ 'bg-indigo-600 text-white' if p == pagination.page else 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50' }} focus:z-20 focus:outline-offset-0">{{
+                        p }}</a>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <a href="{{ url_for('dossiers.archives', page=pagination.next_num, num=num, title=title, client=client) }}"
+                        class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <span class="sr-only">Suivant</span>
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

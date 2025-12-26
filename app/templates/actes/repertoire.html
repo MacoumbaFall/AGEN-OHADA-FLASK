@@ -12,19 +12,7 @@
     <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
             <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">N°
-                    Répertoire</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Archivage</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type d'Acte</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Dossier</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Signé par</th>
-                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                    <span class="sr-only">Actions</span>
-                </th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-            {% for acte in acts %}
+                {% for acte in actes %}
             <tr>
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-bold text-indigo-600 sm:pl-6">
                     {{ acte.date_archivage.year }}-{{ "%04d" % acte.numero_repertoire }}
@@ -37,6 +25,15 @@
                     <a href="{{ url_for('dossiers.view', id=acte.dossier.id) }}" class="hover:underline">{{
                         acte.dossier.numero_dossier }}</a>
                     {% endif %}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                        {% if acte.statut == 'SIGNE' %} bg-green-100 text-green-800
+                        {% elif acte.statut == 'BROUILLON' %} bg-yellow-100 text-yellow-800
+                        {% elif acte.statut == 'ARCHIVE' %} bg-gray-100 text-gray-800
+                        {% else %} bg-blue-100 text-blue-800 {% endif %}">
+                        {{ acte.statut }}
+                    </span>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ acte.finalise_par.username if
                     acte.finalise_par else '-' }}</td>
@@ -57,7 +54,7 @@
                 </td>
             </tr>
             {% endfor %}
-        </tbody>
+            </tbody>
     </table>
 </div>
 {% endblock %}

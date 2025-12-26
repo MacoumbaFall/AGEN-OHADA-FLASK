@@ -458,6 +458,12 @@ def archive_dossier(id):
         flash('Dossier introuvable ou déjà archivé.', 'error')
         return redirect(url_for('dossiers.index'))
     
+    # Check for drafts - Archiving is forbidden if drafts exist
+    drafts = [a for a in dossier.actes if a.statut == 'BROUILLON']
+    if drafts:
+        flash(f'Archivage impossible : il reste {len(drafts)} acte(s) en brouillon. Veuillez les signer ou les supprimer.', 'error')
+        return redirect(url_for('dossiers.view', id=id))
+    
     # Selective Archiving: Filter for SIGNE acts
     signed_acts = [a for a in dossier.actes if a.statut == 'SIGNE']
     
