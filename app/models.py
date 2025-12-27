@@ -184,12 +184,24 @@ class Facture(db.Model):
     ecriture = relationship('ComptaEcriture')
     auteur = relationship('User')
 
+class TypeFormalite(db.Model):
+    __tablename__ = 'type_formalites'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    cout_base: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    delai_moyen: Mapped[Optional[int]] = mapped_column(Integer) # en jours
+
+    formalites = relationship('Formalite', back_populates='type_relation')
+
 class Formalite(db.Model):
     __tablename__ = 'formalites'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dossier_id: Mapped[Optional[int]] = mapped_column(ForeignKey('dossiers.id', ondelete='CASCADE'))
-    type_formalite: Mapped[str] = mapped_column(String(100), nullable=False)
+    type_formalite: Mapped[str] = mapped_column(String(100), nullable=False) # Legacy field
+    type_id: Mapped[Optional[int]] = mapped_column(ForeignKey('type_formalites.id'))
     date_depot: Mapped[Optional[datetime]] = mapped_column(Date)
     date_retour: Mapped[Optional[datetime]] = mapped_column(Date)
     cout_estime: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
@@ -198,6 +210,7 @@ class Formalite(db.Model):
     statut: Mapped[str] = mapped_column(String(30), default='A_FAIRE')
 
     dossier = relationship('Dossier', back_populates='formalites')
+    type_relation = relationship('TypeFormalite', back_populates='formalites')
 
 class Template(db.Model):
     __tablename__ = 'templates'

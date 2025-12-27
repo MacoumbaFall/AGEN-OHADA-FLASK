@@ -175,25 +175,34 @@ class FormaliteCalculator:
         Returns:
             Dict contenant le détail des frais
         """
+        # Normalisation du type pour le matching (gestion des codes et des noms complets)
+        t_upper = type_formalite.upper()
+        
         calculateurs = {
             'ENREGISTREMENT': FormaliteCalculator.calculer_enregistrement,
+            'ENREGISTREMENT IMPÔTS': FormaliteCalculator.calculer_enregistrement,
             'HYPOTHEQUE': FormaliteCalculator.calculer_hypotheque,
+            'INSCRIPTION HYPOTHÉCAIRE': FormaliteCalculator.calculer_hypotheque,
             'RCCM': FormaliteCalculator.calculer_rccm,
+            'DÉPÔT RCCM': FormaliteCalculator.calculer_rccm,
             'JOURNAL': FormaliteCalculator.calculer_journal,
-            'CADASTRE': FormaliteCalculator.calculer_cadastre
+            'PUBLICATION JOURNAL OFFICIEL': FormaliteCalculator.calculer_journal,
+            'CADASTRE': FormaliteCalculator.calculer_cadastre,
+            'FORMALITÉS CADASTRALES': FormaliteCalculator.calculer_cadastre
         }
         
-        calculateur = calculateurs.get(type_formalite)
+        calculateur = calculateurs.get(t_upper)
         
         if calculateur:
             return calculateur(**kwargs)
         else:
-            # Pour les types non définis, retourner un coût estimé par défaut
+            # Pour les types non définis, ou si on a passé le cout_base
+            cout_base = kwargs.get('cout_base', Decimal('50000'))
             return {
                 'type_formalite': type_formalite,
-                'estimation': Decimal('50000'),
-                'total': Decimal('50000'),
-                'note': 'Estimation forfaitaire - à ajuster'
+                'estimation': Decimal(str(cout_base)),
+                'total': Decimal(str(cout_base)),
+                'note': 'Estimation basée sur le coût de base du type'
             }
 
 
@@ -207,31 +216,20 @@ def estimer_delai_formalite(type_formalite: str) -> Dict[str, any]:
     Returns:
         Dict avec le délai en jours et des informations complémentaires
     """
+    t_upper = type_formalite.upper()
+    
     delais = {
-        'ENREGISTREMENT': {
-            'jours': 3,
-            'description': 'Délai moyen pour enregistrement aux impôts'
-        },
-        'HYPOTHEQUE': {
-            'jours': 15,
-            'description': 'Délai moyen pour inscription hypothécaire'
-        },
-        'RCCM': {
-            'jours': 7,
-            'description': 'Délai moyen pour dépôt au RCCM'
-        },
-        'JOURNAL': {
-            'jours': 30,
-            'description': 'Délai moyen pour publication au Journal Officiel'
-        },
-        'CADASTRE': {
-            'jours': 45,
-            'description': 'Délai moyen pour formalités cadastrales'
-        },
-        'DIVERS': {
-            'jours': 10,
-            'description': 'Délai estimé pour autres formalités'
-        }
+        'ENREGISTREMENT': {'jours': 3, 'description': 'Délai moyen pour enregistrement aux impôts'},
+        'ENREGISTREMENT IMPÔTS': {'jours': 3, 'description': 'Délai moyen pour enregistrement aux impôts'},
+        'HYPOTHEQUE': {'jours': 15, 'description': 'Délai moyen pour inscription hypothécaire'},
+        'INSCRIPTION HYPOTHÉCAIRE': {'jours': 15, 'description': 'Délai moyen pour inscription hypothécaire'},
+        'RCCM': {'jours': 7, 'description': 'Délai moyen pour dépôt au RCCM'},
+        'DÉPÔT RCCM': {'jours': 7, 'description': 'Délai moyen pour dépôt au RCCM'},
+        'JOURNAL': {'jours': 30, 'description': 'Délai moyen pour publication au Journal Officiel'},
+        'PUBLICATION JOURNAL OFFICIEL': {'jours': 30, 'description': 'Délai moyen pour publication au Journal Officiel'},
+        'CADASTRE': {'jours': 45, 'description': 'Délai moyen pour formalités cadastrales'},
+        'FORMALITÉS CADASTRALES': {'jours': 45, 'description': 'Délai moyen pour formalités cadastrales'},
+        'DIVERS': {'jours': 10, 'description': 'Délai estimé pour autres formalités'}
     }
     
-    return delais.get(type_formalite, delais['DIVERS'])
+    return delais.get(t_upper, delais['DIVERS'])

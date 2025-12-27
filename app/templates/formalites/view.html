@@ -31,7 +31,8 @@
 
         <div class="sm:flex sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">{{ formalite.type_formalite }}</h1>
+                <h1 class="text-3xl font-bold text-gray-900">{{ formalite.type_relation.nom if formalite.type_relation
+                    else formalite.type_formalite }}</h1>
                 <p class="mt-2 text-sm text-gray-700">
                     Dossier: <a href="{{ url_for('dossiers.view', id=formalite.dossier_id) }}"
                         class="font-medium text-indigo-600 hover:text-indigo-500">{{ formalite.dossier.numero_dossier
@@ -183,7 +184,8 @@
                             <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
                                 <span
                                     class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                                    {{ formalite.type_formalite }}
+                                    {{ formalite.type_relation.nom if formalite.type_relation else
+                                    formalite.type_formalite }}
                                 </span>
                             </dd>
                         </div>

@@ -54,16 +54,16 @@
 
                 <!-- Type de Formalité -->
                 <div class="sm:col-span-3">
-                    <label for="type_formalite" class="block text-sm font-medium leading-6 text-gray-900">
-                        {{ form.type_formalite.label.text }} <span class="text-red-500">*</span>
+                    <label for="type_id" class="block text-sm font-medium leading-6 text-gray-900">
+                        {{ form.type_id.label.text }} <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-2">
-                        {{ form.type_formalite(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
+                        {{ form.type_id(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm
                         ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm
-                        sm:leading-6", id="type_formalite") }}
+                        sm:leading-6", id="type_id") }}
                     </div>
-                    {% if form.type_formalite.errors %}
-                    <p class="mt-2 text-sm text-red-600">{{ form.type_formalite.errors[0] }}</p>
+                    {% if form.type_id.errors %}
+                    <p class="mt-2 text-sm text-red-600">{{ form.type_id.errors[0] }}</p>
                     {% endif %}
                 </div>
 
@@ -184,9 +184,13 @@
 
 <script>
     async function estimateCost() {
-        const typeFormalite = document.getElementById('type_formalite').value;
+        const typeSelect = document.getElementById('type_id');
+        const typeId = typeSelect.value;
+        const typeFormalite = typeSelect.options[typeSelect.selectedIndex].text;
+        const dateDepotInput = document.querySelector('input[name="date_depot"]');
+        const dateRetourInput = document.querySelector('input[name="date_retour"]');
 
-        if (!typeFormalite) {
+        if (!typeId || typeId === '') {
             alert('Veuillez sélectionner un type de formalité');
             return;
         }
@@ -198,8 +202,9 @@
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    type_id: typeId,
                     type_formalite: typeFormalite,
-                    montant_acte: 1000000,  // Valeur par défaut, peut être personnalisée
+                    montant_acte: 1000000,
                     montant_garanti: 5000000,
                     nombre_lignes: 10
                 })
@@ -208,7 +213,23 @@
             const data = await response.json();
 
             if (data.total) {
-                document.getElementById('cout_estime').value = data.total;
+                document.getElementById('cout_estime').value = data.total.toFixed(0);
+
+                // Calculer automatiquement la date de retour si la date de dépôt est saisie
+                if (dateDepotInput && dateDepotInput.value && data.delai_estime) {
+                    const delai = parseInt(data.delai_estime.jours);
+                    if (!isNaN(delai)) {
+                        const [year, month, day] = dateDepotInput.value.split('-').map(Number);
+                        const dateDepot = new Date(year, month - 1, day);
+                        const dateRetour = new Date(dateDepot);
+                        dateRetour.setDate(dateRetour.getDate() + delai);
+
+                        const y = dateRetour.getFullYear();
+                        const m = String(dateRetour.getMonth() + 1).padStart(2, '0');
+                        const d = String(dateRetour.getDate()).padStart(2, '0');
+                        dateRetourInput.value = `${y}-${m}-${d}`;
+                    }
+                }
 
                 // Afficher les détails
                 const resultDiv = document.getElementById('estimation-result');
