@@ -1,19 +1,26 @@
-"""
-Consolidated Production Database Initialization Script
-Combines init_db, init_types, and migrate_phase5 logic.
-"""
 from app import create_app, db
-from app.models import User, TypeActe
+from app.models import User, TypeActe, TypeFormalite, Formalite
 from app.comptabilite.service import ComptabiliteService
 import os
 import sys
 from pathlib import Path
+from sqlalchemy import text
 
 def setup():
     app = create_app()
     with app.app_context():
         print("--- Step 1: Creating Tables ---")
         db.create_all()
+        
+        # Manual migration for formalites.type_id if not created by create_all
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE formalites ADD COLUMN IF NOT EXISTS type_id INTEGER REFERENCES type_formalites(id)"))
+                conn.commit()
+            print("Info: Column type_id verified/added.")
+        except Exception as e:
+            print(f"Info: type_id addition note: {e}")
+
         print("Success: Tables created/verified.")
 
         print("\n--- Step 2: Creating Admin User ---")
@@ -45,7 +52,24 @@ def setup():
         else:
             print("Info: Act types already exist.")
 
-        print("\n--- Step 4: Initializing Accounting Accounts ---")
+        print("\n--- Step 4: Initializing Formality Types ---")
+        if db.session.query(TypeFormalite).count() == 0:
+            default_formalites = [
+                ('ENREGISTREMENT IMPÔTS', 'Enregistrement Impôts', 25000, 3),
+                ('INSCRIPTION HYPOTHÉCAIRE', 'Inscription Hypothécaire', 50000, 15),
+                ('DÉPÔT RCCM', 'Dépôt RCCM', 30000, 5),
+                ('PUBLICATION JOURNAL OFFICIEL', 'Publication Journal Officiel', 15000, 7),
+                ('FORMALITÉS CADASTRALES', 'Formalités Cadastrales', 40000, 20),
+                ('DIVERS', 'Autre', 0, 1)
+            ]
+            for nom, desc, cout, delai in default_formalites:
+                db.session.add(TypeFormalite(nom=nom, description=desc, cout_base=cout, delai_moyen=delai))
+            db.session.commit()
+            print("Success: Formality types initialized.")
+        else:
+            print("Info: Formality types already exist.")
+
+        print("\n--- Step 5: Initializing Accounting Accounts ---")
         try:
             ComptabiliteService.initialize_default_accounts()
             print("Success: Accounting chart initialized.")
