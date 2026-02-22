@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex items-center justify-between border-b pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Calcul de provision sur frais et honoraires</h1>
+            <p class="mt-2 text-sm text-gray-600">Module de simulation pour l'acte de <span
+                    class="font-semibold text-indigo-600 uppercase">Succession</span></p>
+        </div>
+        <a href="{{ url_for('actes.types_acte_index') }}"
+            class="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            Retour
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Formulaire de saisie -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                    <svg class="mr-2 h-5 w-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                    Données du dossier
+                </h2>
+                <form method="POST" class="space-y-5">
+                    <input type="hidden" name="action" value="calculate">
+                    <div>
+                        <label for="valeur_immeuble"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Valeur de
+                            l'immeuble (FCFA)</label>
+                        <input type="number" step="100" name="valeur_immeuble" id="valeur_immeuble"
+                            value="{{ params.valeur_immeuble or 0 }}"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                    </div>
+                    <div>
+                        <label for="reste_actif"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reste de l'actif
+                            successoral (FCFA)</label>
+                        <input type="number" step="100" name="reste_actif" id="reste_actif"
+                            value="{{ params.reste_actif or 0 }}"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                    </div>
+                    <div>
+                        <label for="passif"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Passif à
+                            déduire (FCFA)</label>
+                        <input type="number" step="100" name="passif" id="passif" value="{{ params.passif or 0 }}"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                    </div>
+                    <div>
+                        <label for="mois_penalite"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Durée (en
+                            mois)</label>
+                        <input type="number" name="mois_penalite" id="mois_penalite"
+                            value="{{ params.mois_penalite or 0 }}"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                    </div>
+                    <div>
+                        <label for="lieu_deces"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Lieu du
+                            Décès</label>
+                        <select name="lieu_deces" id="lieu_deces"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                            <option value="1" {% if params.lieu_deces==1 %}selected{% endif %}>Sénégal (Délai 6 mois)
+                            </option>
+                            <option value="2" {% if params.lieu_deces==2 %}selected{% endif %}>Étranger (Délai 12 mois)
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="parente"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Degré de
+                            Parenté</label>
+                        <select name="parente" id="parente"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                            <option value="1" {% if params.parente==1 %}selected{% endif %}>Entre époux et en ligne
+                                directe (3%)</option>
+                            <option value="2" {% if params.parente==2 %}selected{% endif %}>Autres (10%)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center p-3 rounded-lg bg-indigo-50 border border-indigo-100">
+                        <input type="checkbox" name="inclure_conservation" id="inclure_conservation" {% if
+                            params.inclure_conservation %}checked{% endif %}
+                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="inclure_conservation" class="ml-3 text-sm font-semibold text-indigo-900">Calculer la
+                            Conservation Foncière</label>
+                    </div>
+                    <button type="submit"
+                        class="w-full inline-flex justify-center items-center py-4 px-4 border border-transparent shadow-lg text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:-translate-y-1">
+                        CALCULER LA PROVISION
+                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 7l5 5m0 0l-5 5m5-5H6" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="mt-8 bg-gray-50 rounded-2xl p-5 border border-gray-200">
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"
+                                stroke-linejoin="round" stroke-width="2" />
+                        </svg>
+                        Barème des Honoraires
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex justify-between items-center text-xs">
+                            <span class="text-gray-600">De 0 à 10 000 000</span>
+                            <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-bold">1.5%</span>
+                        </li>
+                        <li class="flex justify-between items-center text-xs">
+                            <span class="text-gray-600">De 10M à 40 000 000</span>
+                            <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-bold">1.0%</span>
+                        </li>
+                        <li class="flex justify-between items-center text-xs">
+                            <span class="text-gray-600">De 40M à 150 000 000</span>
+                            <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-bold">0.75%</span>
+                        </li>
+                        <li class="flex justify-between items-center text-xs">
+                            <span class="text-gray-600">Au-delà de 150 000 000</span>
+                            <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-bold">0.5%</span>
+                        </li>
+                    </ul>
+                    <p class="mt-4 text-[10px] text-gray-400 italic">Ces taux s'appliquent sur l'actif net successoral.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div class="lg:col-span-2">
+            {% if result %}
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Estimation Provisoire</h2>
+                        <p class="text-indigo-100 text-sm">Basé sur l'Actif Net de {{ "{:,.0f}".format(result.actif_net)
+                            }} FCFA</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs uppercase font-bold text-indigo-200">Total Provision</p>
+                        <p class="text-3xl font-black">{{ "{:,.0f}".format(result.total_general) }} FCFA</p>
+                    </div>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    <!-- Honoraires -->
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="bg-indigo-100 text-indigo-600 p-1 rounded mr-2">01</span>
+                            Émoluments et Honoraires (HT)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Honoraires Notaire</p>
+                                <p class="text-xl font-bold text-gray-900">{{ "{:,.0f}".format(result.honoraires_ht) }}
+                                    FCFA</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">TVA (18%)</p>
+                                <p class="text-xl font-bold text-gray-900">{{ "{:,.0f}".format(result.tva) }} FCFA</p>
+                            </div>
+                        </div>
+
+                        <!-- Détail des tranches -->
+                        {% if result.honoraires_details %}
+                        <div class="mt-4 overflow-hidden rounded-xl border border-indigo-100 bg-indigo-50/30">
+                            <table class="min-w-full divide-y divide-indigo-100">
+                                <thead class="bg-indigo-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-left text-[10px] font-black text-indigo-700 uppercase tracking-wider">
+                                            Tranche Actif Net</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-center text-[10px] font-black text-indigo-700 uppercase tracking-wider">
+                                            Taux</th>
+                                        <th scope="col"
+                                            class="px-4 py-2 text-right text-[10px] font-black text-indigo-700 uppercase tracking-wider">
+                                            Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-indigo-50 bg-white/50">
+                                    {% for tranche in result.honoraires_details %}
+                                    <tr>
+                                        <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-600 font-medium">{{
+                                            tranche.tranche }}</td>
+                                        <td
+                                            class="px-4 py-2 whitespace-nowrap text-xs text-center text-indigo-600 font-bold">
+                                            {{ tranche.taux }}</td>
+                                        <td
+                                            class="px-4 py-2 whitespace-nowrap text-xs text-right text-gray-900 font-black">
+                                            {{ "{:,.0f}".format(tranche.montant) }} FCFA</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <!-- Taxes État -->
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="bg-orange-100 text-orange-600 p-1 rounded mr-2">02</span>
+                            Droits et Taxes (Trésor Public)
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Droits de Succession</p>
+                                <p class="text-xl font-bold text-gray-900">{{ "{:,.0f}".format(result.droits_fisc) }}
+                                    FCFA</p>
+                                {% if result.penalites_fisc > 0 %}
+                                <p class="text-xs text-red-500 mt-2 font-medium">+ {{
+                                    "{:,.0f}".format(result.penalites_fisc) }} FCFA de pénalités</p>
+                                {% endif %}
+                            </div>
+                            <div class="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                                <p class="text-xs text-gray-500 font-bold uppercase mb-1">Conservation Foncière</p>
+                                <p class="text-xl font-bold text-gray-900">{{
+                                    "{:,.0f}".format(result.conservation_fonciere) }} FCFA</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Débours -->
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+                            <span class="bg-teal-100 text-teal-600 p-1 rounded mr-2">03</span>
+                            Débours et Formalités Fixes
+                        </h3>
+                        <div class="p-6 rounded-2xl bg-gray-50 border border-gray-100">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Droit sur Mutation</span>
+                                    <span class="font-bold text-gray-900">{{
+                                        "{:,.0f}".format(result.debours_details.droit_mutation) }} FCFA</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Acte de Notoriété</span>
+                                    <span class="font-bold text-gray-900">{{
+                                        "{:,.0f}".format(result.debours_details.notoriete) }} FCFA</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Procuration</span>
+                                    <span class="font-bold text-gray-900">{{
+                                        "{:,.0f}".format(result.debours_details.procuration) }} FCFA</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Exequatur</span>
+                                    <span class="font-bold text-gray-900">{{
+                                        "{:,.0f}".format(result.debours_details.exequatur) }} FCFA</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Frais Généraux / Dossier</span>
+                                    <span class="font-bold text-gray-900">{{
+                                        "{:,.0f}".format(result.debours_details.frais_generaux) }} FCFA</span>
+                                </div>
+                                <div class="pt-3 border-t flex justify-between">
+                                    <span class="text-sm font-black text-gray-900 uppercase">Sous-total Débours</span>
+                                    <span class="font-black text-indigo-600">{{ "{:,.0f}".format(result.total_debours)
+                                        }} FCFA</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="flex flex-col gap-4">
+                        <div class="flex gap-4">
+                            <button onclick="window.print()"
+                                class="flex-1 inline-flex justify-center items-center py-4 px-4 border border-gray-300 shadow-sm text-sm font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-all">
+                                <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
+                                IMPRIMER LA NOTE
+                            </button>
+                        </div>
+
+                        <form method="POST"
+                            class="p-6 rounded-2xl border-2 border-dashed border-green-200 bg-green-50 space-y-4">
+                            <input type="hidden" name="action" value="save">
+                            <input type="hidden" name="valeur_immeuble" value="{{ params.valeur_immeuble }}">
+                            <input type="hidden" name="reste_actif" value="{{ params.reste_actif }}">
+                            <input type="hidden" name="passif" value="{{ params.passif }}">
+                            <input type="hidden" name="mois_penalite" value="{{ params.mois_penalite }}">
+                            <input type="hidden" name="lieu_deces" value="{{ params.lieu_deces }}">
+                            <input type="hidden" name="parente" value="{{ params.parente }}">
+                            {% if params.inclure_conservation %}<input type="hidden" name="inclure_conservation"
+                                value="on">{% endif %}
+
+                            <div>
+                                <label for="dossier_id"
+                                    class="block text-xs font-bold text-green-700 uppercase tracking-wider mb-2">Sélectionner
+                                    un dossier pour la sauvegarde</label>
+                                <select name="dossier_id" id="dossier_id"
+                                    class="block w-full rounded-lg border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-3 bg-white font-medium">
+                                    <option value="">-- Choisir un dossier --</option>
+                                    {% for dossier in dossiers %}
+                                    <option value="{{ dossier.id }}">{{ dossier.numero_dossier }} - {{
+                                        dossier.nom_dossier }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full inline-flex justify-center items-center py-4 px-4 border border-transparent shadow-sm text-sm font-bold rounded-xl text-white bg-green-600 hover:bg-green-700 transition-all">
+                                <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2" />
+                                </svg>
+                                ENREGISTRER AU DOSSIER
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div
+                class="h-64 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
+                <svg class="h-16 w-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                </svg>
+                <p class="text-gray-500 font-medium">Veuillez renseigner les données à gauche pour simuler la provision.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+
+        nav,
+        footer,
+        .lg\:col-span-1,
+        .mb-8,
+        a,
+        button {
+            display: none !important;
+        }
+
+        .lg\:col-span-2 {
+            width: 100% !important;
+        }
+
+        .shadow-xl {
+            box-shadow: none !important;
+            border: none !important;
+        }
+    }
+</style>
+
+{% endblock %}

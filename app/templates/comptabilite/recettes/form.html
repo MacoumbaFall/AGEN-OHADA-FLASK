@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg font-medium leading-6 text-gray-900">{{ title }}</h3>
+            <div class="mt-5">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            {{ form.date_operation.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.date_operation(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            {{ form.montant.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.montant(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm", placeholder="0.00") }}
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            {{ form.libelle.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.libelle(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm", placeholder="Ex: Vente de
+                            timbres, etc.") }}
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            {{ form.mode_paiement.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.mode_paiement(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            {{ form.categorie_compte.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.categorie_compte(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            {{ form.compte_produit.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.compte_produit(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            {{ form.dossier.label(class="block text-sm font-medium text-gray-700") }}
+                            {{ form.dossier(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-end gap-3">
+                        <a href="{{ url_for('comptabilite.index') }}"
+                            class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Annuler
+                        </a>
+                        {{ form.submit_btn(class="inline-flex justify-center rounded-md border border-transparent
+                        bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

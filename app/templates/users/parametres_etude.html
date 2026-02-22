@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- En-tête -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Paramètres de l'Étude</h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Configuration des taux fiscaux, débours et informations de l'étude notariale.
+                Ces valeurs sont utilisées dans tous les calculs de barèmes.
+            </p>
+        </div>
+        <a href="{{ url_for('users.index') }}"
+            class="inline-flex items-center gap-1 rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+            Retour
+        </a>
+    </div>
+
+    <!-- Bannière d'information -->
+    <div class="mb-6 rounded-lg bg-indigo-50 border border-indigo-200 p-4 flex gap-3">
+        <svg class="h-5 w-5 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+        </svg>
+        <div class="text-sm text-indigo-800">
+            <strong>Prise d'effet immédiate :</strong> toute modification est appliquée instantanément à tous les
+            calculs de barèmes.
+            Les valeurs par défaut correspondent aux taux en vigueur selon la réglementation OHADA / Sénégal.
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('users.parametres_etude') }}" id="form-parametres">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}">
+
+        {% set ordre_groupes = ['FISCAL', 'BAREMES', 'MUTATION', 'DEBOURS', 'FACTURATION', 'ETUDE'] %}
+
+        {% for groupe_key in ordre_groupes %}
+        {% if groupe_key in groupes %}
+        {% set titre_groupe, desc_groupe = groupe_labels[groupe_key] %}
+        {% set params = groupes[groupe_key] %}
+
+        <div class="mb-8 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+
+            <!-- En-tête du groupe -->
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 flex items-center gap-3">
+                <div>
+                    <h2 class="text-base font-semibold text-gray-800">{{ titre_groupe }}</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ desc_groupe }}</p>
+                </div>
+            </div>
+
+            <!-- Lignes de paramètres -->
+            <div class="divide-y divide-gray-100">
+                {% for param in params %}
+                <div class="px-6 py-4 flex items-start gap-6 hover:bg-gray-50 transition-colors">
+
+                    <!-- Label + description -->
+                    <div class="flex-1 min-w-0">
+                        <label for="param-{{ param.cle }}" class="block text-sm font-medium text-gray-800">
+                            {{ param.libelle }}
+                        </label>
+                        {% if param.description %}
+                        <p class="mt-0.5 text-xs text-gray-400">{{ param.description }}</p>
+                        {% endif %}
+                        {% if param.modifie_le %}
+                        <p class="mt-1 text-xs text-gray-300 italic">
+                            Modifié le {{ param.modifie_le.strftime('%d/%m/%Y à %H:%M') }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Champ de saisie -->
+                    <div class="w-56 flex-shrink-0">
+                        {% if param.type_valeur == 'bool' %}
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="checkbox" id="param-{{ param.cle }}" name="{{ param.cle }}" value="true" {% if
+                                param.valeur|lower in ('true', '1' , 'oui' ) %}checked{% endif %}
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-sm text-gray-600">Activé</span>
+                        </div>
+                        {% elif param.type_valeur == 'string' %}
+                        <input type="text" id="param-{{ param.cle }}" name="{{ param.cle }}" value="{{ param.valeur }}"
+                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm sm:leading-6">
+                        {% elif param.type_valeur == 'int' %}
+                        <input type="number" id="param-{{ param.cle }}" name="{{ param.cle }}"
+                            value="{{ param.valeur }}" step="1" min="0"
+                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm sm:leading-6 text-right tabular-nums">
+                        {% else %} {# decimal #}
+                        {% if param.cle.startswith('taux_') %}
+                        {# Afficher en % pour les taux #}
+                        <div class="relative">
+                            <input type="number" id="param-{{ param.cle }}" name="{{ param.cle }}"
+                                value="{{ param.valeur }}" step="0.001" min="0" max="1" data-type="decimal"
+                                class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm sm:leading-6 text-right tabular-nums">
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                <span class="text-gray-400 text-xs font-medium">
+                                    ({{ (param.valeur | float * 100) | round(1) }}%)
+                                </span>
+                            </div>
+                        </div>
+                        {% else %}
+                        {# Montants FCFA #}
+                        <div class="relative">
+                            <input type="number" id="param-{{ param.cle }}" name="{{ param.cle }}"
+                                value="{{ param.valeur }}" step="500" min="0" data-type="decimal"
+                                class="block w-full rounded-md border-0 py-1.5 pl-3 pr-14 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm sm:leading-6 text-right tabular-nums">
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                <span class="text-gray-400 text-xs font-medium">FCFA</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% endif %}
+        {% endfor %}
+
+        <!-- Boutons d'action (fixed en bas) -->
+        <div
+            class="sticky bottom-0 z-10 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between shadow-lg rounded-b-xl -mx-0">
+            <p class="text-xs text-gray-400">
+                ⚠️ Accès réservé aux administrateurs. Toute modification est irréversible sans sauvegarde préalable.
+            </p>
+            <div class="flex gap-3">
+                <a href="{{ url_for('users.index') }}"
+                    class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    Annuler
+                </a>
+                <button type="submit" id="btn-save"
+                    class="rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60">
+                    Enregistrer les paramètres
+                </button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    // Confirmation avant soumission
+    document.getElementById('form-parametres').addEventListener('submit', function (e) {
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        btn.textContent = 'Enregistrement…';
+
+        // Vérification basique des champs numériques vides
+        let ok = true;
+        this.querySelectorAll('input[type="number"]').forEach(function (inp) {
+            if (inp.value.trim() === '') {
+                inp.classList.add('ring-red-400');
+                ok = false;
+            } else {
+                inp.classList.remove('ring-red-400');
+            }
+        });
+
+        if (!ok) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Enregistrer les paramètres';
+            alert('Veuillez remplir tous les champs numériques avant de sauvegarder.');
+        }
+    });
+
+    // Mise en évidence des valeurs modifiées
+    document.querySelectorAll('input').forEach(function (inp) {
+        const original = inp.value;
+        inp.addEventListener('input', function () {
+            if (inp.value !== original) {
+                inp.classList.add('ring-amber-400', 'ring-2');
+            } else {
+                inp.classList.remove('ring-amber-400', 'ring-2');
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

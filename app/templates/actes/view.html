@@ -41,11 +41,26 @@
         {% endif %}
         {% endif %}
 
+        <a href="{{ url_for('actes.signature_page', id=acte.id) }}"
+            class="inline-flex items-center rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-700">
+            Page Signatures
+        </a>
+
         {% if acte.contenu_html %}
         <a href="{{ url_for('actes.download_pdf', id=acte.id) }}"
             class="inline-flex items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700">
             PDF
         </a>
+        {% elif acte.type_acte == 'NOTE DE PROVISION' %}
+        <button onclick="window.print()" type="button"
+            class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            <svg class="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+            </svg>
+            Imprimer / PDF
+        </button>
         {% else %}
         <a href="{{ url_for('actes.download_docx', id=acte.id) }}"
             class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
@@ -63,6 +78,217 @@
                 {% if acte.contenu_html %}
                 <div class="prose max-w-none">
                     {{ acte.contenu_html | safe }}
+                </div>
+                {% elif acte.type_acte == 'NOTE DE PROVISION' and acte.contenu_json %}
+                <div id="provision-content"
+                    class="space-y-8 print:space-y-4 print:p-8 print:bg-white bg-white sm:rounded-xl">
+                    <div
+                        class="bg-indigo-600 p-6 rounded-xl text-white flex justify-between items-center shadow-lg print:bg-indigo-600 print:text-white print:border-none">
+                        <div>
+                            <h2 class="text-2xl font-bold uppercase tracking-wider">Note de Provision</h2>
+                            <p class="text-indigo-100 font-medium">Opération : {{ acte.contenu_json.type }}</p>
+                            <p class="text-indigo-200 text-xs mt-2 italic">Date de simulation : {{
+                                acte.created_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <div class="text-right">
+                                <p class="text-xs uppercase font-bold text-indigo-200 tracking-widest">Total à
+                                    Provisionner</p>
+                                <p class="text-4xl font-black">{{
+                                    "{:,.0f}".format(acte.contenu_json.result.total_general).replace(',', ' ') }} FCFA
+                                </p>
+                            </div>
+                            {% if current_user.role in ['COMPTABLE', 'NOTAIRE', 'ADMIN'] %}
+                            <div class="flex gap-2 print:hidden mt-2">
+                                <a href="{{ url_for('comptabilite.recus_create', source_acte_id=acte.id) }}"
+                                    class="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"
+                                            stroke-width="2" />
+                                    </svg>
+                                    Émettre Reçu
+                                </a>
+                                <a href="{{ url_for('comptabilite.factures_create', source_acte_id=acte.id) }}"
+                                    class="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                    Créer Facture
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-6 mt-8">
+                        <!-- Détails Honoraires -->
+                        {% if acte.contenu_json.result.honoraires_ht %}
+                        <div
+                            class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm print:shadow-none print:border-gray-300">
+                            <h3
+                                class="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4 flex items-center">
+                                <span class="bg-indigo-100 p-1.5 rounded mr-2 text-indigo-700">01</span> Émoluments (HT)
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 print:bg-gray-100">
+                                        <p class="text-xs text-gray-400 font-bold uppercase mb-1 tracking-wider">
+                                            Honoraires</p>
+                                        <p class="text-xl font-black text-gray-900">{{
+                                            "{:,.0f}".format(acte.contenu_json.result.honoraires_ht).replace(',', ' ')
+                                            }} FCFA</p>
+                                    </div>
+                                    <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 print:bg-gray-100">
+                                        <p class="text-xs text-gray-400 font-bold uppercase mb-1 tracking-wider">TVA
+                                            (18%)</p>
+                                        <p class="text-xl font-black text-gray-900">{{
+                                            "{:,.0f}".format(acte.contenu_json.result.tva).replace(',', ' ') }} FCFA</p>
+                                    </div>
+                                </div>
+
+                                {% if acte.contenu_json.result.honoraires_details %}
+                                <!-- Détail par tranche -->
+                                <div class="bg-indigo-50/50 rounded-xl p-4 border border-indigo-50">
+                                    <h4
+                                        class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-3 text-center">
+                                        Calcul par tranches</h4>
+                                    <table class="min-w-full text-xs">
+                                        <thead>
+                                            <tr
+                                                class="text-indigo-600 border-b border-indigo-100 uppercase tracking-wider text-[10px]">
+                                                <th class="text-left py-2 font-bold">Tranche</th>
+                                                <th class="text-center py-2 font-bold">Taux</th>
+                                                <th class="text-right py-2 font-bold">Base</th>
+                                                <th class="text-right py-2 font-bold">Montant</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-indigo-50">
+                                            {% for h in acte.contenu_json.result.honoraires_details %}
+                                            <tr class="text-gray-700">
+                                                <td class="py-2.5 font-medium text-indigo-900/70">{{ h.tranche }}</td>
+                                                <td class="py-2.5 text-center font-semibold">{{ h.taux }}</td>
+                                                <td class="py-2.5 text-right">{{
+                                                    "{:,.0f}".format(h.base|float).replace(',', ' ') }}</td>
+                                                <td class="py-2.5 text-right font-black text-indigo-900">{{
+                                                    "{:,.0f}".format(h.montant|float).replace(',', ' ') }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Détails Taxes -->
+                        <div
+                            class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm print:shadow-none print:border-gray-300">
+                            <h3
+                                class="text-xs font-black text-orange-600 uppercase tracking-widest mb-4 flex items-center">
+                                <span class="bg-orange-100 p-1.5 rounded mr-2 text-orange-700">02</span> Droits et Taxes
+                            </h3>
+                            <div class="space-y-4">
+                                {% if acte.contenu_json.result.enregistrement %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Enregistrement</span>
+                                    <span class="font-black text-gray-900">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.enregistrement).replace(',', ' ') }}
+                                        FCFA</span>
+                                </div>
+                                {% endif %}
+                                {% if acte.contenu_json.result.taxe_tpv %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Impôt Plus-Value (TPV)</span>
+                                    <span class="font-black text-red-600">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.taxe_tpv).replace(',', ' ') }}
+                                        FCFA</span>
+                                </div>
+                                {% endif %}
+                                {% if acte.contenu_json.result.droits_fisc %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Droits Succession</span>
+                                    <span class="font-black text-gray-900">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.droits_fisc).replace(',', ' ') }}
+                                        FCFA</span>
+                                </div>
+                                {% endif %}
+                                {% if acte.contenu_json.result.penalites_fisc %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-bold text-red-500">Pénalités Fiscale</span>
+                                    <span class="font-black text-red-600">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.penalites_fisc).replace(',', ' ') }}
+                                        FCFA</span>
+                                </div>
+                                {% endif %}
+                                {% if acte.contenu_json.result.conservation_fonciere %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Conservation Foncière</span>
+                                    <span class="font-black text-gray-900">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.conservation_fonciere).replace(',', '
+                                        ') }} FCFA</span>
+                                </div>
+                                {% endif %}
+                                {% if acte.contenu_json.result.greffe %}
+                                <div class="flex justify-between items-center py-2.5 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Greffe (RCCM)</span>
+                                    <span class="font-black text-gray-900">{{
+                                        "{:,.0f}".format(acte.contenu_json.result.greffe).replace(',', ' ') }}
+                                        FCFA</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Débours -->
+                    {% if acte.contenu_json.result.debours_details %}
+                    <div
+                        class="bg-gray-50 p-6 rounded-xl border border-gray-100 print:bg-gray-50 print:border-gray-200">
+                        <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest mb-5 flex items-center">
+                            <span class="bg-gray-200 p-1.5 text-gray-600 rounded mr-2">03</span> Débours et Frais
+                            Accessoires
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {% for label, value in acte.contenu_json.result.debours_details.items() %}
+                            <div
+                                class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 print:shadow-none print:border-gray-200">
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate mb-1">{{
+                                    label.replace('_', ' ') }}</p>
+                                <p class="text-base font-black text-gray-800">{{ "{:,.0f}".format(value).replace(',', '
+                                    ') }} FCFA</p>
+                            </div>
+                            {% endfor %}
+                            {% if acte.contenu_json.result.frais_annexes %}
+                            <div
+                                class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 print:shadow-none print:border-gray-200">
+                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Annexes</p>
+                                <p class="text-base font-black text-gray-800">{{
+                                    "{:,.0f}".format(acte.contenu_json.result.frais_annexes).replace(',', ' ') }} FCFA
+                                </p>
+                            </div>
+                            {% endif %}
+                            {% if acte.contenu_json.result.penalites %}
+                            <div
+                                class="bg-white p-4 rounded-xl shadow-sm border border-red-200 bg-red-50/30 print:border-red-300 print:bg-red-50">
+                                <p class="text-[10px] text-red-500 font-bold uppercase tracking-wider mb-1">Pénalités
+                                    Retard</p>
+                                <p class="text-base font-black text-red-600">{{
+                                    "{:,.0f}".format(acte.contenu_json.result.penalites).replace(',', ' ') }} FCFA</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div
+                        class="p-5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 italic text-center font-medium print:border-gray-300 print:bg-white print:text-gray-600 mt-8">
+                        AVERTISSEMENT : Cette simulation est fournie à titre indicatif. Les montants définitifs peuvent
+                        varier selon les justificatifs produits et les taux en vigueur au jour de la signature de
+                        l'acte.
+                    </div>
                 </div>
                 {% else %}
                 <div id="docx-container" class="border border-gray-200 rounded-md bg-gray-50 overflow-auto p-2"
@@ -150,7 +376,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if not acte.contenu_html %}
+{% if not acte.contenu_html and not acte.contenu_json %}
 <script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/docx-preview.min.js') }}"></script>
 <script>
@@ -212,4 +438,25 @@
     }
 </style>
 {% endif %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #provision-content,
+        #provision-content * {
+            visibility: visible;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        #provision-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+    }
+</style>
 {% endblock %}

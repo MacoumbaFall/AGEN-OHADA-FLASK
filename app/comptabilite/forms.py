@@ -20,6 +20,16 @@ def office_comptes():
 def client_comptes():
     return db.session.execute(db.select(ComptaCompte).filter_by(actif=True, categorie='CLIENT').order_by(ComptaCompte.numero_compte)).scalars()
 
+def charge_comptes():
+    return db.session.execute(db.select(ComptaCompte).filter(
+        db.or_(ComptaCompte.numero_compte.startswith('6'), ComptaCompte.numero_compte.startswith('4'), ComptaCompte.numero_compte.startswith('2'))
+    ).filter_by(actif=True).order_by(ComptaCompte.numero_compte)).scalars()
+
+def produit_comptes():
+    return db.session.execute(db.select(ComptaCompte).filter(
+        db.or_(ComptaCompte.numero_compte.startswith('7'), ComptaCompte.numero_compte.startswith('4'))
+    ).filter_by(actif=True).order_by(ComptaCompte.numero_compte)).scalars()
+
 class CompteForm(FlaskForm):
     """Form for creating/editing accounts."""
     numero_compte = StringField('Numéro de Compte', validators=[DataRequired()])
@@ -102,6 +112,8 @@ class RecetteForm(FlaskForm):
         ('OFFICE', 'Compte Office'),
         ('CLIENT', 'Compte Client')
     ], validators=[DataRequired()])
+    compte_produit = QuerySelectField('Compte de Contrepartie', query_factory=produit_comptes,
+                               get_label=lambda c: f"{c.numero_compte} - {c.libelle}")
     dossier = QuerySelectField('Dossier (optionnel)', query_factory=enabled_dossiers,
                                get_label='numero_dossier', allow_blank=True, blank_text='-- Aucun --')
     submit_btn = SubmitField('Enregistrer la Recette')
@@ -120,6 +132,10 @@ class DepenseForm(FlaskForm):
         ('OFFICE', 'Compte Office'),
         ('CLIENT', 'Compte Client')
     ], validators=[DataRequired()])
+    compte_charge = QuerySelectField('Compte de Charge/Contrepartie', query_factory=charge_comptes,
+                               get_label=lambda c: f"{c.numero_compte} - {c.libelle}")
     dossier = QuerySelectField('Dossier (optionnel)', query_factory=enabled_dossiers,
                                get_label='numero_dossier', allow_blank=True, blank_text='-- Aucun --')
     submit_btn = SubmitField('Enregistrer la Dépense')
+
+

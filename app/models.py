@@ -47,6 +47,31 @@ class Client(db.Model):
     telephone: Mapped[Optional[str]] = mapped_column(String(30))
     email: Mapped[Optional[str]] = mapped_column(String(100))
     identifiant_unique: Mapped[Optional[str]] = mapped_column(String(50))
+    
+    # --- Personne Physique ---
+    profession: Mapped[Optional[str]] = mapped_column(String(100))
+    nationalite: Mapped[Optional[str]] = mapped_column(String(50))
+    situation_matrimoniale: Mapped[Optional[str]] = mapped_column(String(50))
+    regime_matrimonial: Mapped[Optional[str]] = mapped_column(String(100))
+    
+    # --- Personne Morale ---
+    forme_juridique: Mapped[Optional[str]] = mapped_column(String(50))
+    capital_social: Mapped[Optional[float]] = mapped_column(Numeric(15, 2))
+    rccm: Mapped[Optional[str]] = mapped_column(String(100))
+    ninea: Mapped[Optional[str]] = mapped_column(String(100))
+    
+    # --- KYC / Pièces d'identité ---
+    type_piece_identite: Mapped[Optional[str]] = mapped_column(String(50))
+    numero_piece_identite: Mapped[Optional[str]] = mapped_column(String(100))
+    date_emission_piece: Mapped[Optional[datetime]] = mapped_column(Date)
+    date_expiration_piece: Mapped[Optional[datetime]] = mapped_column(Date)
+    autorite_emission_piece: Mapped[Optional[str]] = mapped_column(String(100))
+    
+    # --- Statut KYC ---
+    kyc_statut: Mapped[str] = mapped_column(String(20), default='A_VERIFIER') # 'A_VERIFIER', 'VALIDE', 'EXPIRE', 'REJETE'
+    kyc_date_verification: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    kyc_notes: Mapped[Optional[str]] = mapped_column(Text)
+
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
 
     dossier_participations = relationship('DossierParty', back_populates='client')
@@ -237,6 +262,8 @@ class TypeActe(db.Model):
     templates = relationship('Template', back_populates='type_acte')
     actes = relationship('Acte', back_populates='type_acte_relation')
 
+
+
 # Update Acte model to include type_acte_id
 class Acte(db.Model):
     __tablename__ = 'actes'
@@ -268,3 +295,46 @@ class Acte(db.Model):
     type_acte_relation = relationship('TypeActe', back_populates='actes')
     finalise_par = relationship('User', foreign_keys=[finalise_par_id])
     archive_par = relationship('User', foreign_keys=[archive_par_id])
+
+
+class ParametreEtude(db.Model):
+    """
+    Paramètres configurables de l'étude notariale.
+
+    Table clé/valeur permettant de configurer les taux fiscaux,
+    frais fixes et informations de l'étude directement depuis l'interface
+    admin — sans modifier le code ni redémarrer le serveur.
+
+    Groupes de paramètres :
+      FISCAL    → taux TVA, droits d'enregistrement, Conservation Foncière
+      MUTATION  → seuils et montants des droits de mutation
+      DEBOURS   → frais d'expéditions, publicité, morcellement, etc.
+      ETUDE     → nom, adresse, téléphone du notaire
+    """
+    __tablename__ = 'parametres_etude'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cle: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    valeur: Mapped[str] = mapped_column(Text, nullable=False)  # toujours stocké en string
+    type_valeur: Mapped[str] = mapped_column(String(20), default='decimal')  # 'decimal', 'int', 'string', 'bool'
+    groupe: Mapped[str] = mapped_column(String(30), default='FISCAL')  # 'FISCAL', 'MUTATION', 'DEBOURS', 'ETUDE'
+    libelle: Mapped[str] = mapped_column(String(200), nullable=False)  # label affiché dans l'UI
+    description: Mapped[Optional[str]] = mapped_column(Text)  # aide contextuelle
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id'))
+
+    @property
+    def valeur_typee(self):
+        """Retourne la valeur dans son type natif (Decimal, int, str, bool)."""
+        from decimal import Decimal
+        if self.type_valeur == 'decimal':
+            return Decimal(self.valeur)
+        elif self.type_valeur == 'int':
+            return int(self.valeur)
+        elif self.type_valeur == 'bool':
+            return self.valeur.lower() in ('true', '1', 'oui')
+        return self.valeur  # string par défaut
+
+    def __repr__(self):
+        return f'<ParametreEtude {self.cle}={self.valeur}>'
+

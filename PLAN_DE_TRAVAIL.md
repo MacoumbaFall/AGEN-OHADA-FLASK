@@ -282,8 +282,31 @@ Permettre la génération d'actes à partir de documents Word complexes.
 - [x] Fusion dynamique des champs avec les données du dossier.
 - [x] Gestion des dépendances système pour PDF (WeasyPrint).
 
+---
+
+## Phase 10 : Refonte du module Barèmes (Provision sur Frais et Honoraires) - 🔄 EN COURS
+
+### Objectif
+Implémenter un système de calcul de provisions sur frais et honoraires accessible directement depuis la gestion des types d'actes.
+
+### Tâches
+1.  **Interface et Navigation**
+    -   [ ] Ajouter un lien "Barème" dans la liste des types d'actes (`types_acte_index.html`).
+    -   [ ] Créer la route `/actes/bareme/<type_acte_id>` pour le nouveau formulaire.
+
+2.  **Nouveau Module de Calcul**
+    -   [ ] Concevoir le formulaire de saisie des paramètres de calcul (ex: capital, prix, etc.).
+    -   - [ ] Implémenter la logique de calcul des émoluments fixes et proportionnels.
+    -   - [ ] Gérer les débours et taxes associés.
+
+3.  **Intégration et Persistance**
+    -   [ ] Permettre la sauvegarde des résultats dans le dossier/acte lié.
+    -   [ ] Générer un état de provision imprimable pour le client.
+
+---
+
 ## Conclusion
-L'application est en production (v1.1.0) sur Koyeb, intégrant toutes les fonctionnalités du cahier des charges initial et les extensions avancées (Word, Archivage).
+L'application est en production (v1.1.0) sur Koyeb. La Phase 10 marque le début d'une nouvelle stratégie pour la gestion des barèmes financiers.
 
 ---
 

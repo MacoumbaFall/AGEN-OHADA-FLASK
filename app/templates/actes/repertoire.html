@@ -6,13 +6,30 @@
         <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">Répertoire Notarial</h1>
         <p class="mt-2 text-sm text-gray-700">Index chronologique officiel des actes archivés de l'étude.</p>
     </div>
+    <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <button onclick="window.print()" type="button"
+            class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            🖨️ Imprimer la page
+        </button>
+    </div>
 </div>
 
 <div class="bg-white shadow ring-1 ring-gray-900/5 sm:rounded-xl overflow-hidden">
     <table class="min-w-full divide-y divide-gray-300">
         <thead class="bg-gray-50">
             <tr>
-                {% for acte in actes %}
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Numéro
+                </th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date Archivage</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type d'Acte</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Dossier</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Statut</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Par</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 bg-white">
+            {% for acte in actes %}
             <tr>
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-bold text-indigo-600 sm:pl-6">
                     {{ acte.date_archivage.year }}-{{ "%04d" % acte.numero_repertoire }}
@@ -54,7 +71,7 @@
                 </td>
             </tr>
             {% endfor %}
-            </tbody>
+        </tbody>
     </table>
 </div>
 {% endblock %}

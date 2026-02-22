@@ -1,0 +1,13 @@
+# Files and directories to ignore when building the Koyeb image
+# Similar to .dockerignore but used by Koyeb.
+.git
+.gitignore
+.env
+.env.example
+.koyebignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+instance/

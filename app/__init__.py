@@ -19,6 +19,16 @@ def create_app(config_class=Config):
     def inject_now():
         from datetime import datetime
         return {'now': datetime.utcnow()}
+        
+    @app.template_filter('num2words')
+    def num2words_filter(amount):
+        try:
+            from num2words import num2words
+            # Ensure it's an integer for CFA, since there are no decimals in CFA normally.
+            amount_str = str(int(amount))
+            return num2words(amount_str, lang='fr')
+        except Exception:
+            return str(amount)
 
     db.init_app(app)
     migrate.init_app(app, db)

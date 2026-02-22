@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="print:hidden mb-4 sm:flex sm:items-center sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Page de Signatures - Acte {{ acte.id }}</h1>
+        <p class="text-sm text-gray-500">Dossier: {{ acte.dossier.numero_dossier if acte.dossier else 'N/A' }}</p>
+    </div>
+    <div class="mt-4 sm:mt-0 flex gap-2">
+        <a href="{{ url_for('actes.view_act', id=acte.id) }}"
+            class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+            Retour
+        </a>
+        <button onclick="window.print()"
+            class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+            🖨️ Imprimer pour Signature
+        </button>
+    </div>
+</div>
+
+<div class="bg-white p-10 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl print:shadow-none print:ring-0">
+    <div class="text-center mb-12">
+        <h2 class="text-3xl font-serif font-bold uppercase tracking-widest text-gray-900">{{ p.get_str('etude_nom',
+            'ÉTUDE NOTARIALE') }}</h2>
+        <p class="text-lg text-gray-600 mt-2">{{ p.get_str('etude_notaire', '') }}</p>
+        <div class="mt-8 border-b-2 border-gray-900 w-1/4 mx-auto"></div>
+    </div>
+
+    <div class="mb-12">
+        <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">PAGE DES SIGNATURES</h3>
+        <p class="text-gray-700 text-justify mb-2">
+            <strong>Acte:</strong> {{ acte.type_acte }}<br>
+            <strong>Dossier:</strong> {{ acte.dossier.intitule if acte.dossier else 'N/A' }}
+        </p>
+        <p class="text-gray-700 text-justify">
+            Fait à ........................................, le ........................................
+        </p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-16 mt-16 text-center">
+        {% if acte.dossier and acte.dossier.parties %}
+        {% for party in acte.dossier.parties %}
+        <div class="flex flex-col items-center">
+            <p class="font-bold text-gray-900 uppercase text-sm h-12">{{ party.role_dans_acte }}</p>
+            <p class="text-gray-700 font-medium mb-16">{{ party.client.nom }} {{ party.client.prenom or '' }}</p>
+            <div class="border-b border-gray-400 w-3/4"></div>
+            <p class="text-xs text-gray-400 mt-2">Signature</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="mt-24 text-center pb-10">
+        <p class="font-bold text-gray-900 uppercase text-sm mb-16">LE NOTAIRE</p>
+        <p class="text-gray-700 font-medium">{{ p.get_str('etude_notaire', 'Maître ...') }}</p>
+        <div class="border-b border-gray-400 w-1/3 mx-auto mt-16"></div>
+        <p class="text-xs text-gray-400 mt-2">Signature &amp; Sceau</p>
+    </div>
+</div>
+
+<style>
+    @media print {
+        @page {
+            margin: 2cm;
+            size: a4 portrait;
+        }
+
+        body {
+            background: white;
+        }
+    }
+</style>
+{% endblock %}
