@@ -1,126 +1,103 @@
 # Manuel Utilisateur - AGEN-OHADA
 
-Bienvenue dans le guide d'utilisation de **AGEN-OHADA**, votre solution de gestion d'étude notariale.
-
-## Table des Matières
-1. [Accès et Connexion](#1-accès-et-connexion)
-2. [Tableau de Bord](#2-tableau-de-bord)
-3. [Gestion des Clients](#3-gestion-des-clients)
-4. [Gestion des Dossiers](#4-gestion-des-dossiers)
-5. [Rédaction d'Actes](#5-rédaction-dactes)
-6. [Suivi des Formalités](#6-suivi-des-formalités)
-7. [Comptabilité](#7-comptabilité)
-8. [Archivage et Répertoire](#8-archivage-et-répertoire)
+Bienvenue dans le guide d'utilisation de **AGEN-OHADA**, votre solution complète de gestion d'étude notariale.
 
 ---
 
-## 1. Accès et Connexion
+## 🧭 Navigation de l'Application
 
-Pour accéder à l'application, ouvrez votre navigateur web et rendez-vous sur l'adresse fournie par votre administrateur (ex: `https://votre-etude.koyeb.app`).
+L'interface de l'application a été repensée pour être accessible sur ordinateur et sur mobile. Les fonctionnalités sont réparties en deux menus principaux : **Gestion** et **Administration**.
 
-*   **Identifiant** : Votre nom d'utilisateur.
-*   **Mot de passe** : Votre mot de passe sécurisé.
+### 💼 Menu "Gestion"
+Ce menu centralise toutes les opérations métier quotidiennes de l'étude :
+*   **Accueil** : Le tableau de bord avec vos statistiques et accès rapides.
+*   **Clients** : Base de données de vos contacts (KYC, informations légales, pièces d'identité).
+*   **Dossiers** : Centralisation des affaires (parties prenantes, statut d'avancement).
+*   **Formalités** : Suivi post-signature et calculateur de frais OHADA.
+*   **Actes** (Sous-menu) :
+    *   *Gérer les types d'actes* : Création et paramétrage des actes possibles.
+    *   *Gérer les modèles d'acte* : Envoi de modèles Word (.docx) avec publipostage ou éditeur Markdown.
+    *   *Signer les actes* : Validation et signature cryptographique par le Notaire.
+    *   *Répertoire Notarial* : Registre officiel des actes.
+*   **Comptabilité** : Suivi des encaissements (reçus), facturations, comptes clients et caisse de l'office.
+*   **Archives** : Accès aux dossiers clôturés en lecture seule.
 
----
-
-## 2. Tableau de Bord
-
-Le **Tableau de Bord** affiche les statistiques en temps réel :
-*   Nombre total de clients et dossiers actifs.
-*   Formalités en attente de traitement.
-*   Accès rapide aux modules via la barre de navigation.
-
----
-
-## 3. Gestion des Clients
-
-*   **Personnes Physiques / Morales** : Enregistrez vos clients avec toutes les informations légales nécessaires.
-*   **Recherche** : Filtrage instantané par nom dans la liste des clients.
-*   **Dossiers liés** : Visualisez tous les dossiers en cours pour un client spécifique depuis sa fiche.
+### ⚙️ Menu "Administration" (Administrateurs uniquement)
+*   **Utilisateurs** : Création des comptes clercs/notaires et gestion des permissions.
+*   **Paramètres** : Configuration globale de l'étude (nom, adresse, logo, etc.).
 
 ---
 
-## 4. Gestion des Dossiers
-
-Un dossier centralise toutes les informations d'une affaire.
-*   **Ouverture** : Attribuez un intitulé et un type de dossier.
-*   **Parties** : Associez les clients (Vendeur, Acheteur, Prêteur, etc.) via l'onglet "Parties".
-*   **Workflow** : Suivez l'état (Ouvert, Signé, Archivé).
-
----
-
-## 5. Rédaction d'Actes
-
-Le module **Actes** permet de générer des documents à partir de modèles.
-
-### Modèles de documents
-Vous pouvez utiliser deux types de modèles :
-*   **Modèles Word (.docx)** : Téléchargez vos propres fichiers Word avec des balises de fusion (ex: `{{ client.nom }}`). Le système les remplira automatiquement.
-*   **Modèles Markdown** : Éditeur de texte intégré pour des actes simples et rapides.
-
-### Validation par le Notaire
-Une fois un acte généré par un clerc, il apparaît dans le module **"Validation Actes"** pour le Notaire.
-*   Le Notaire peut réviser l'acte, le modifier ou le valider.
-*   Une fois validé, l'acte peut être signé électroniquement (enregistrement du hash).
+## 1. Tableau de Bord
+Le point d'entrée de votre application affiche les indicateurs clés en temps réel :
+*   Le nombre total de clients et de dossiers actifs.
+*   Les formalités en cours.
+*   Les raccourcis pour créer rapidement un client ou une formalité.
 
 ---
 
-## 6. Suivi des Formalités
-
-Gérez les étapes post-signature :
-*   **Calculateur OHADA** : Estimation automatique des droits d'enregistrement et émoluments.
-*   **Suivi des dépôts** : Enregistrez les dates de dépôt et de retour des actes auprès des administrations.
-
----
-
-## 7. Comptabilité
-
-Gestion rigoureuse des flux financiers :
-*   **Reçus et Factures** : Génération automatique lors de l'encaissement ou de la facturation.
-*   **Séparation des fonds** : Gestion distincte entre la caisse de l'Office et le compte Client.
-*   **Rapports** : Balance générale, Grand Livre et Journal disponibles en temps réel.
+## 2. Gestion des Clients (KYC)
+La base commune pour toute l'étude :
+*   **Création** : Enregistrez une personne physique ou morale.
+*   **KYC (Know Your Customer)** : Suivez l'état du dossier client (pièces manquantes, profession, nationalité).
+*   **Liaison** : Un client peut être rattaché à plusieurs dossiers en tant qu'acheteur, vendeur, etc.
 
 ---
 
-## 8. Archivage et Répertoire
-
-Une fois l'affaire terminée, le dossier peut être archivé.
-*   **Processus d'archivage** : Seuls les actes signés et finalisés sont transférés vers les archives sécurisées.
-*   **Numéro de Répertoire** : Un numéro unique annuel est attribué à chaque acte archivé.
-*   **Répertoire Notarial** : Consultez la liste officielle de tous les actes archivés par année dans le module **"Répertoire"**.
-*   **Sécurité** : Un dossier archivé devient verrouillé (lecture seule) pour garantir l'intégrité des données.
+## 3. Gestion des Dossiers
+Le cœur de métier. Un dossier regroupe :
+*   Les informations de base (titre, type, date d'ouverture).
+*   **Les Parties** : Ajoutez des clients existants et assignez-leur un rôle (Vendeur, Créancier, etc.).
+*   Tous les documents et formalités rattachés se font depuis ce point central.
 
 ---
 
-## 9. Variables Dynamiques
+## 4. Rédaction et Signature des Actes
+Ce module permet la génération automatisée et la validation des documents sécurisés :
 
-Pour automatiser vos actes, vous pouvez utiliser des balises que le système remplacera par les données réelles du dossier.
+1.  **Génération** : Le clerc génère un document à partir d'un modèle Word. Le système remplit automatiquement les balises comme `{{ client.nom }}`.
+2.  **Validation** : Le notaire retrouve le document dans "Signer les actes". Il peut télécharger le fichier, le modifier, puis le valider.
+3.  **Signature** : Une fois validé, le document est "signé" cryptographiquement (empreinte numérique SHA-256) pour garantir son authenticité.
 
-### Utilisation
-*   **Dans les modèles Word (.docx)** : Insérez la variable entre doubles accolades, par exemple : `{{ client.nom }}`.
-*   **Dans les modèles Markdown** : Utilisez également la syntaxe `{{ client.nom }}`.
+---
 
-### Liste des variables disponibles
+## 5. Suivi des Formalités
+Évitez les retards et pénalités :
+*   **Calculateur OHADA** : Estimez les frais d'enregistrement sur la base des barèmes en vigueur.
+*   **Suivi chronologique** : Enregistrez la date de dépôt, la date prévue de retour et suivez le statut avec les différentes administrations (Domaines, Impôts, RCCM).
 
-| Catégorie | Variable | Description |
+---
+
+## 6. Comptabilité
+Gérez la vie financière de l'étude sans logiciel tiers tiers :
+*   **Double Caisse** : Suivi distinct des honoraires de l'étude et des fonds détenus pour le compte des clients (frais de mutation, dépôts).
+*   **Reçus et Factures** : Édition et impression de pièces comptables normées.
+*   **Rapports** : Visualisez l'état des comptes à tout instant.
+
+---
+
+## 7. Archivage et Répertoire
+Une fois un dossier totalement traité :
+*   **Clôture** : Le dossier passe dans la section "Archives". Les données ne peuvent plus être modifiées par erreur.
+*   **Répertoire Annuel** : Chaque acte signé se voit attribuer un numéro de répertoire de façon séquentielle par année. La liste complète est consultable et exportable par les administrateurs.
+
+---
+
+## 💡 Astuce : Variables Dynamiques (.docx)
+Dans vos modèles Word, utilisez ces codes exacts pour injecter automatiquement les données du dossier :
+
+| Catégorie | Tag / Balise | Ce qui sera écrit |
 |-----------|----------|-------------|
-| **Dossier** | `{{ dossier.numero_dossier }}` | Numéro unique du dossier (ex: DOS-2025-001) |
-| | `{{ dossier.intitule }}` | Objet ou titre de l'affaire |
-| | `{{ dossier.date_ouverture }}` | Date d'ouverture du dossier |
-| **Client Principal** | `{{ client.nom }}` | Nom de famille du client principal |
-| | `{{ client.prenom }}` | Prénom du client principal |
-| | `{{ client.adresse }}` | Adresse complète du client |
-| **Vendeur** | `{{ vendeur.nom }}` | Nom du client ayant le rôle "Vendeur" |
-| | `{{ vendeur.prenom }}` | Prénom du vendeur |
-| **Acheteur** | `{{ acheteur.nom }}` | Nom du client ayant le rôle "Acheteur" |
-| | `{{ acheteur.prenom }}` | Prénom de l'acheteur |
-| **Général** | `{{ date }}` | Date du jour (format JJ/MM/AAAA) |
-| | `{{ now.year }}` | Année en cours |
+| **Dossier** | `{{ dossier.numero_dossier }}` | Numéro (ex: DOS-2026-001) |
+| | `{{ dossier.intitule }}` | Objet de l'affaire |
+| | `{{ dossier.date_ouverture }}` | Date d'ouverture |
+| **Client ** | `{{ client.nom }}` | Nom de famille / Raison sociale |
+| | `{{ client.prenom }}` | Prénom du client |
+| | `{{ client.adresse }}` | Adresse complète |
 
-> [!TIP]
-> Si une variable est vide dans le dossier (ex: pas d'acheteur défini), elle apparaîtra vide dans l'acte généré. Assurez-vous de bien remplir les "Parties" du dossier avant de générer l'acte.
+*Note: Vous pouvez utiliser des rôles spécifiques selon les parties de votre dossier (ex: `{{ vendeur.nom }}`, `{{ acheteur.prenom }}`).*
 
 ---
 
-## Besoin d'aide technique ?
-Consultez la version de l'application en bas de page. Pour tout support, contactez l'administrateur de l'étude.
+Besoin d'aide technique supplémentaire ? 
+Contactez l'administrateur système de votre étude.
