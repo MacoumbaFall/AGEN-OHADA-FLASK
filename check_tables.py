@@ -1,7 +1,7 @@
 import psycopg
 
 try:
-    conn = psycopg.connect("dbname=agen_ohada user=postgres host=localhost port=5432")
+    conn = psycopg.connect("dbname=agen_ohada user=postgres password=admin123 host=localhost port=5432")
     cur = conn.cursor()
     cur.execute("""
         SELECT table_name

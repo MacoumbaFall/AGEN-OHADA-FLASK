@@ -172,3 +172,7 @@ def reset_password(id):
                          title=f'Réinitialiser le mot de passe: {user.username}',
                          form=form,
                          user=user)
+
+
+# ── Paramètres de l'étude ──────────────────────────────────────────────────
+from app.users.routes_parametres import parametres_etude  # noqa: F401,E402

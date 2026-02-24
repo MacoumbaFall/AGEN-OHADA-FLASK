@@ -170,3 +170,45 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dossierSelect = document.getElementById('dossier');
+        const montantHtInput = document.getElementById('montant_ht');
+        const descriptionInput = document.getElementById('description');
+
+        if (dossierSelect) {
+            dossierSelect.addEventListener('change', function () {
+                const dossierId = this.value;
+                if (!dossierId) return;
+
+                fetch(`/comptabilite/api/dossier-info/${dossierId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.type_acte_id) {
+                            calculateFees(data.type_acte_id);
+                        }
+                    });
+            });
+        }
+
+        function calculateFees(typeActeId) {
+            fetch(`/comptabilite/api/calculate-fees?type_acte_id=${typeActeId}`)
+                .then(response => response.json())
+                .then(fees => {
+                    if (fees && fees.length > 0) {
+                        let totalHt = 0;
+                        let desc = "Détail des frais :\n";
+                        fees.forEach(f => {
+                            totalHt += f.montant;
+                            desc += `- ${f.libelle} (${f.categorie}) : ${f.montant.toLocaleString()} FCFA\n`;
+                        });
+                        if (montantHtInput) montantHtInput.value = totalHt.toFixed(0);
+                        if (descriptionInput) descriptionInput.value = desc;
+                    }
+                });
+        }
+    });
+</script>
+{% endblock %}

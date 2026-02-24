@@ -4,7 +4,7 @@ from app import db
 from app.comptabilite import bp
 from app.comptabilite.service import ComptabiliteService
 from app.comptabilite.forms import CompteForm, RecuForm, FactureForm, RecetteForm, DepenseForm
-from app.models import ComptaCompte, ComptaEcriture, Recu, Facture
+from app.models import ComptaCompte, ComptaEcriture, Recu, Facture, TypeActe
 from datetime import datetime, date
 from io import BytesIO
 from flask import send_file, make_response
@@ -127,6 +127,21 @@ def recus_create():
     """Create a new receipt."""
     form = RecuForm()
     
+    # Handle pre-filling from simulation
+    source_acte_id = request.args.get('source_acte_id', type=int)
+    if source_acte_id and request.method == 'GET':
+        from app.models import Acte
+        acte = db.session.get(Acte, source_acte_id)
+        if acte and acte.type_acte == 'NOTE DE PROVISION' and acte.contenu_json:
+            res = acte.contenu_json.get('result', {})
+            form.dossier.data = acte.dossier
+            # Try to get the first party as client
+            if acte.dossier and acte.dossier.parties:
+                form.client.data = acte.dossier.parties[0].client
+            form.montant.data = res.get('total_general', 0)
+            form.motif.data = f"Provision pour {acte.contenu_json.get('type')} - Dossier {acte.dossier.numero_dossier}"
+            form.date_emission.data = date.today()
+
     if form.validate_on_submit():
         try:
             recu = ComptabiliteService.create_recu(
@@ -212,6 +227,21 @@ def factures_create():
     """Create a new invoice."""
     form = FactureForm()
     
+    # Handle pre-filling from simulation
+    source_acte_id = request.args.get('source_acte_id', type=int)
+    if source_acte_id and request.method == 'GET':
+        from app.models import Acte
+        acte = db.session.get(Acte, source_acte_id)
+        if acte and acte.type_acte == 'NOTE DE PROVISION' and acte.contenu_json:
+            res = acte.contenu_json.get('result', {})
+            form.dossier.data = acte.dossier
+            if acte.dossier and acte.dossier.parties:
+                form.client.data = acte.dossier.parties[0].client
+            form.montant_ht.data = res.get('honoraires_ht', 0)
+            form.montant_tva.data = res.get('tva', 0)
+            form.description.data = f"Honoraires pour {acte.contenu_json.get('type')} - Dossier {acte.dossier.numero_dossier}"
+            form.date_emission.data = date.today()
+
     if form.validate_on_submit():
         try:
             facture = ComptabiliteService.create_facture(
@@ -235,19 +265,23 @@ def factures_create():
 @login_required
 @role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def factures_view(id):
-    """View invoice details."""
-    facture = db.session.get(Facture, id)
+    """Affiche une facture"""
+    from app.actes.services.parametres import ParametreService
+    facture = db.session.get(Facture, id) # Changed from ComptaFacture to Facture to match existing model usage
     if not facture:
         flash('Facture introuvable.', 'error')
         return redirect(url_for('comptabilite.factures_index'))
-    
-    return render_template('comptabilite/factures/view.html', facture=facture)
+    return render_template('comptabilite/factures/view.html',
+                         title=f'Facture {facture.numero_facture}',
+                         facture=facture,
+                         p=ParametreService)
 
 @bp.route('/factures/<int:id>/download')
 @login_required
 @role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
 def factures_download_pdf(id):
     """Download invoice as PDF."""
+    from app.actes.services.parametres import ParametreService
     facture = db.session.get(Facture, id)
     if not facture:
         flash('Facture introuvable.', 'error')
@@ -255,7 +289,7 @@ def factures_download_pdf(id):
     
     from weasyprint import HTML
     
-    html_content = render_template('comptabilite/factures/view.html', facture=facture, is_pdf=True)
+    html_content = render_template('comptabilite/factures/view.html', facture=facture, is_pdf=True, p=ParametreService)
     
     pdf_buffer = BytesIO()
     HTML(string=html_content, base_url=request.base_url).write_pdf(pdf_buffer)
@@ -267,6 +301,83 @@ def factures_download_pdf(id):
         download_name=f"facture_{facture.numero_facture}.pdf",
         mimetype='application/pdf'
     )
+
+@bp.route('/recettes/new', methods=['GET', 'POST'])
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def recettes_create():
+    """Create a new income entry (non-receipt)."""
+    form = RecetteForm()
+    if form.validate_on_submit():
+        try:
+            # Determine accounts
+            if form.categorie_compte.data == 'OFFICE':
+                 compte_tresorerie_num = ComptabiliteService.COMPTE_CAISSE_OFFICE if form.mode_paiement.data == 'ESPECES' else ComptabiliteService.COMPTE_BANQUE_OFFICE
+            else:
+                 compte_tresorerie_num = ComptabiliteService.COMPTE_CAISSE_CLIENT if form.mode_paiement.data == 'ESPECES' else ComptabiliteService.COMPTE_BANQUE_CLIENT
+            
+            compte_treso = db.session.execute(db.select(ComptaCompte).filter_by(numero_compte=compte_tresorerie_num)).scalar_one()
+            compte_contrepartie = form.compte_produit.data
+            
+            ecriture = ComptabiliteService.create_ecriture(
+                date_ecriture=form.date_operation.data,
+                libelle=form.libelle.data,
+                journal_code='CA' if form.mode_paiement.data == 'ESPECES' else 'BQ',
+                mouvements=[
+                    {'compte_id': compte_treso.id, 'debit': float(form.montant.data), 'credit': 0},
+                    {'compte_id': compte_contrepartie.id, 'debit': 0, 'credit': float(form.montant.data)}
+                ],
+                dossier_id=form.dossier.data.id if form.dossier.data else None,
+                user_id=current_user.id
+            )
+            ComptabiliteService.valider_ecriture(ecriture.id)
+            flash('Recette enregistrée avec succès.', 'success')
+            return redirect(url_for('comptabilite.index'))
+        except Exception as e:
+            flash(f'Erreur: {str(e)}', 'error')
+            
+    return render_template('comptabilite/recettes/form.html', form=form, title='Enregistrer une Recette')
+
+@bp.route('/depenses/new', methods=['GET', 'POST'])
+@login_required
+@role_required('COMPTABLE', 'NOTAIRE', 'ADMIN')
+def depenses_create():
+    """Create a new expense entry."""
+    form = DepenseForm()
+    if form.validate_on_submit():
+        try:
+            # Determine accounts
+            if form.categorie_compte.data == 'OFFICE':
+                 compte_tresorerie_num = ComptabiliteService.COMPTE_CAISSE_OFFICE if form.mode_paiement.data == 'ESPECES' else ComptabiliteService.COMPTE_BANQUE_OFFICE
+            else:
+                 compte_tresorerie_num = ComptabiliteService.COMPTE_CAISSE_CLIENT if form.mode_paiement.data == 'ESPECES' else ComptabiliteService.COMPTE_BANQUE_CLIENT
+            
+            compte_treso = db.session.execute(db.select(ComptaCompte).filter_by(numero_compte=compte_tresorerie_num)).scalar_one()
+            
+            compte_charge = form.compte_charge.data
+            
+            if not compte_charge:
+                 flash("Plan comptable incomplet ou compte non sélectionné.", 'error')
+                 return render_template('comptabilite/depenses/form.html', form=form)
+
+            ecriture = ComptabiliteService.create_ecriture(
+                date_ecriture=form.date_operation.data,
+                libelle=form.libelle.data,
+                journal_code='CA' if form.mode_paiement.data == 'ESPECES' else 'BQ',
+                mouvements=[
+                    {'compte_id': compte_charge.id, 'debit': float(form.montant.data), 'credit': 0},
+                    {'compte_id': compte_treso.id, 'debit': 0, 'credit': float(form.montant.data)}
+                ],
+                dossier_id=form.dossier.data.id if form.dossier.data else None,
+                user_id=current_user.id
+            )
+            ComptabiliteService.valider_ecriture(ecriture.id)
+            flash('Dépense enregistrée avec succès.', 'success')
+            return redirect(url_for('comptabilite.index'))
+        except Exception as e:
+            flash(f'Erreur: {str(e)}', 'error')
+
+    return render_template('comptabilite/depenses/form.html', form=form, title='Enregistrer une Dépense')
 
 # ===== REPORTS =====
 
@@ -410,3 +521,25 @@ def reports_grand_livre_download():
         download_name=f"{filename}_{date_fin}.pdf",
         mimetype='application/pdf'
     )
+
+
+
+@bp.route('/api/dossier-info/<int:id>')
+@login_required
+def api_dossier_info(id):
+    """API endpoint to get dossier information including act type."""
+    from app.models import Dossier, Acte
+    dossier = db.session.get(Dossier, id)
+    if not dossier:
+        return jsonify({'error': 'Dossier not found'}), 404
+    
+    # Get the latest act type associated with this dossier
+    last_acte = db.session.execute(
+        db.select(Acte).filter_by(dossier_id=id).order_by(Acte.id.desc()).limit(1)
+    ).scalar_one_or_none()
+    
+    return jsonify({
+        'id': dossier.id,
+        'numero_dossier': dossier.numero_dossier,
+        'type_acte_id': last_acte.type_acte_id if last_acte else None
+    })

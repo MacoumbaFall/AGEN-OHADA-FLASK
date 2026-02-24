@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-8" x-data="{ 
+    hasMorcellement: {{ 'true' if params.avec_morcellement else 'false' }}, 
+    hasCF: {{ 'true' if params.avec_cf else 'false' }} 
+}">
+    <div class="mb-8 flex items-center justify-between border-b pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Calcul de provision - PARTAGE</h1>
+            <p class="mt-2 text-sm text-gray-600">Liquidation et Partage (Succession, Communauté, Indivision)</p>
+        </div>
+        <a href="{{ url_for('actes.types_acte_index') }}"
+            class="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            Retour
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Formulaire de saisie -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <form method="POST" class="space-y-6">
+                    <input type="hidden" name="action" value="calculate">
+
+                    <!-- Section 1: Masse Partageable -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-indigo-600 uppercase border-b pb-1">1. Masse Partageable</h3>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Actif Brut
+                                (FCFA)</label>
+                            <input type="number" step="1" name="actif_brut" value="{{ params.actif_brut or 0 }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Passif (Dettes,
+                                Charges) (FCFA)</label>
+                            <input type="number" step="1" name="passif" value="{{ params.passif or 0 }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Soulte (si applicable)
+                                (FCFA)</label>
+                            <input type="number" step="1" name="soulte" value="{{ params.soulte or 0 }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 bg-gray-50">
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Options Immobilières -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-indigo-600 uppercase border-b pb-1">2. Formalités Foncières
+                        </h3>
+
+                        <!-- Morcellement -->
+                        <div class="flex items-center">
+                            <input type="checkbox" id="avec_morcellement" name="avec_morcellement"
+                                x-model="hasMorcellement"
+                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="avec_morcellement" class="ml-2 block text-sm text-gray-900">
+                                Avec Morcellement ?
+                            </label>
+                        </div>
+
+                        <div x-show="hasMorcellement" class="space-y-3 pl-6 border-l-2 border-indigo-100 ml-1"
+                            x-transition>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Nombre de
+                                    parcelles créées</label>
+                                <input type="number" min="2" step="1" name="nb_parcelles"
+                                    value="{{ params.nb_parcelles or 2 }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Coût par parcelle
+                                    (FCFA)</label>
+                                <input type="number" step="1000" name="cout_par_parcelle"
+                                    value="{{ params.cout_par_parcelle or 20000 }}"
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                            </div>
+                        </div>
+
+                        <!-- Conservation Foncière -->
+                        <div class="flex items-center mt-4">
+                            <input type="checkbox" id="avec_cf" name="avec_cf" x-model="hasCF"
+                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="avec_cf" class="ml-2 block text-sm text-gray-900">
+                                Calculer Conservation Foncière ?
+                            </label>
+                        </div>
+
+                        <div x-show="hasCF" class="pl-6 border-l-2 border-indigo-100 ml-1" x-transition>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Valeur Immeuble (si
+                                diff. Actif Net)</label>
+                            <input type="number" step="1" name="valeur_immeuble_cf"
+                                value="{{ params.valeur_immeuble_cf or 0 }}"
+                                placeholder="Laisser 0 pour utiliser Actif Net"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2">
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Frais Variables -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-indigo-600 uppercase border-b pb-1">3. Frais Variables</h3>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Expéditions /
+                                Timbres</label>
+                            <input type="number" step="1" name="cout_expeditions"
+                                value="{{ params.cout_expeditions or 80000 }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Divers /
+                                Autres</label>
+                            <input type="number" step="1" name="cout_divers" value="{{ params.cout_divers or 0 }}"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 bg-gray-50">
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full inline-flex justify-center items-center py-3 px-4 border border-transparent shadow-lg text-sm font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-all mt-4">
+                        SIMULER
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div class="lg:col-span-2">
+            {% if result %}
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div class="bg-indigo-900 p-6 text-white flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Résultat Simulation</h2>
+                        <div class="text-xs text-indigo-200 mt-1 space-y-1">
+                            <p>Actif Brut: {{ "{:,.0f}".format(result.actif_brut) }} - Passif: {{
+                                "{:,.0f}".format(result.passif) }}</p>
+                            <p class="font-bold text-white">Actif Net Partageable: {{ "{:,.0f}".format(result.base) }}
+                                FCFA</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs uppercase font-bold text-indigo-300">Total Provision</p>
+                        <p class="text-3xl font-black">{{ "{:,.0f}".format(result.total_general) }} FCFA</p>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-6 text-sm">
+                    <!-- HT -->
+                    <div class="border-b pb-4">
+                        <h3 class="font-bold text-gray-900 uppercase mb-3">1. Émoluments Notaire</h3>
+                        <div class="flex justify-between mb-1">
+                            <span>Honoraires Proportionnels (HT)</span>
+                            <span class="font-bold">{{ "{:,.0f}".format(result.honoraires_ht) }}</span>
+                        </div>
+                        <div class="flex justify-between text-gray-500">
+                            <span>TVA (18%)</span>
+                            <span>{{ "{:,.0f}".format(result.tva) }}</span>
+                        </div>
+                        <div class="flex justify-between mt-2 font-bold text-indigo-700">
+                            <span>Total Honoraires TTC</span>
+                            <span>{{ "{:,.0f}".format(result.total_honoraires) }} FCFA</span>
+                        </div>
+                    </div>
+
+                    <!-- Droits -->
+                    <div class="border-b pb-4">
+                        <h3 class="font-bold text-gray-900 uppercase mb-3">2. Droits d'Enregistrement & Fonciers</h3>
+                        <div class="flex justify-between mb-1">
+                            <span>Droit sur Acte (Partage) 1%</span>
+                            <span class="font-bold">{{ "{:,.0f}".format(result.droits_detail.enregistrement_partage)
+                                }}</span>
+                        </div>
+                        {% if result.droits_detail.enregistrement_soulte > 0 %}
+                        <div class="flex justify-between mb-1">
+                            <span>Droit sur Soulte</span>
+                            <span class="font-bold">{{ "{:,.0f}".format(result.droits_detail.enregistrement_soulte)
+                                }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if result.droits_detail.conservation_fonciere > 0 %}
+                        <div class="flex justify-between mb-1 text-green-700">
+                            <span>Conservation Foncière</span>
+                            <span class="font-bold">{{ "{:,.0f}".format(result.droits_detail.conservation_fonciere)
+                                }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex justify-between mt-2 font-bold text-indigo-700">
+                            <span>Total Droits</span>
+                            <span>{{ "{:,.0f}".format(result.droits_detail.total_enregistrement +
+                                result.droits_detail.conservation_fonciere) }} FCFA</span>
+                        </div>
+                    </div>
+
+                    <!-- Débours -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 uppercase mb-3">3. Débours & Frais Annexes</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Droits Inscription (Mutation)</span>
+                                <span class="font-bold">{{ "{:,.0f}".format(result.debours_detail.mutation) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Expéditions / Timbres</span>
+                                <span class="font-bold">{{ "{:,.0f}".format(result.debours_detail.expeditions) }}</span>
+                            </div>
+                            {% if result.debours_detail.morcellement > 0 %}
+                            <div class="flex justify-between text-blue-700">
+                                <span>Frais Morcellement ({{ params.nb_parcelles }} parcelles x {{
+                                    "{:,.0f}".format(params.cout_par_parcelle | default(20000) | float) }})</span>
+                                <span class="font-bold">{{ "{:,.0f}".format(result.debours_detail.morcellement)
+                                    }}</span>
+                            </div>
+                            {% endif %}
+                            {% if result.debours_detail.divers > 0 %}
+                            <div class="flex justify-between">
+                                <span>Divers</span>
+                                <span class="font-bold">{{ "{:,.0f}".format(result.debours_detail.divers) }}</span>
+                            </div>
+                            {% endif %}
+
+                            <div class="flex justify-between mt-2 font-bold text-indigo-700">
+                                <span>Total Débours</span>
+                                <span>{{ "{:,.0f}".format(result.total_debours) }} FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Save -->
+                <div class="bg-gray-50 p-6 border-t border-gray-100">
+                    <form method="POST" class="flex gap-4">
+                        <input type="hidden" name="action" value="save">
+                        <!-- Repassage des params pour la sauvegarde -->
+                        <input type="hidden" name="actif_brut" value="{{ params.actif_brut }}">
+                        <input type="hidden" name="passif" value="{{ params.passif }}">
+                        <input type="hidden" name="soulte" value="{{ params.soulte }}">
+                        <input type="hidden" name="avec_morcellement"
+                            value="{{ 'on' if params.avec_morcellement else '' }}">
+                        <input type="hidden" name="nb_parcelles" value="{{ params.nb_parcelles }}">
+                        <input type="hidden" name="cout_par_parcelle" value="{{ params.cout_par_parcelle }}">
+                        <input type="hidden" name="avec_cf" value="{{ 'on' if params.avec_cf else '' }}">
+                        <input type="hidden" name="valeur_immeuble_cf" value="{{ params.valeur_immeuble_cf }}">
+                        <input type="hidden" name="cout_expeditions" value="{{ params.cout_expeditions }}">
+                        <input type="hidden" name="cout_divers" value="{{ params.cout_divers }}">
+
+                        <select name="dossier_id" required
+                            class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                            <option value="">Enregistrer dans le dossier...</option>
+                            {% for dossier in dossiers %}
+                            <option value="{{ dossier.id }}">{{ dossier.numero_dossier }} - {{ dossier.nom_dossier }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit"
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-md font-bold hover:bg-indigo-700">
+                            Sauvegarder
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div
+                class="h-full flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <p class="text-gray-500">Remplissez les paramètres pour voir le détail des coûts.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

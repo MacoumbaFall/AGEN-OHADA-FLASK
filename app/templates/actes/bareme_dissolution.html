@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex items-center justify-between border-b pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Calcul de provision sur frais et honoraires</h1>
+            <p class="mt-2 text-sm text-gray-600">Module de simulation pour l'acte de <span
+                    class="font-semibold text-indigo-600 uppercase">DISSOLUTION DE SOCIÉTÉ</span></p>
+        </div>
+        <a href="{{ url_for('actes.types_acte_index') }}"
+            class="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            Retour
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Formulaire de saisie -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <form method="POST" class="space-y-5">
+                    <input type="hidden" name="action" value="calculate">
+                    <div>
+                        <label for="capital"
+                            class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Capital de la
+                            société (FCFA)</label>
+                        <input type="number" step="1" name="capital" id="capital" value="{{ params.capital or 0 }}"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 bg-gray-50 font-medium h-12">
+                    </div>
+
+                    <button type="submit"
+                        class="w-full inline-flex justify-center items-center py-4 px-4 border border-transparent shadow-lg text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all">
+                        CALCULER LA PROVISION
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Résultats -->
+        <div class="lg:col-span-2">
+            {% if result %}
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <div class="bg-indigo-600 p-6 text-white flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Estimation Provision (Dissolution)</h2>
+                        <p class="text-indigo-100 text-sm">Capital: {{ "{:,.0f}".format(result.base) }} FCFA</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs uppercase font-bold text-indigo-200">Total Provision</p>
+                        <p class="text-3xl font-black">{{ "{:,.0f}".format(result.total_general) }} FCFA</p>
+                    </div>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">01. Honoraires
+                            (Fixes)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-gray-50 border">
+                                <p class="text-xs text-gray-500 font-bold uppercase">Honoraires</p>
+                                <p class="text-xl font-bold">{{ "{:,.0f}".format(result.honoraires_ht) }} FCFA</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-gray-50 border">
+                                <p class="text-xs text-gray-500 font-bold uppercase">TVA (18%)</p>
+                                <p class="text-xl font-bold">{{ "{:,.0f}".format(result.tva) }} FCFA</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">02. Formalités et
+                            Trésor</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-gray-50 border">
+                                <p class="text-xs text-gray-500 font-bold uppercase">Enregistrement</p>
+                                <p class="text-xl font-bold">{{ "{:,.0f}".format(result.enregistrement) }} FCFA</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-gray-50 border">
+                                <p class="text-xs text-gray-500 font-bold uppercase">Greffe (RCCM)</p>
+                                <p class="text-xl font-bold">{{ "{:,.0f}".format(result.greffe) }} FCFA</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">03. Débours</h3>
+                        <div class="p-6 rounded-2xl bg-gray-50 border space-y-2">
+                            <div class="flex justify-between"><span>Publicité (Journal & JO)</span><span>{{
+                                    "{:,.0f}".format(result.debours_details.publicite) }} FCFA</span></div>
+                            <div class="flex justify-between"><span>Expéditions</span><span>{{
+                                    "{:,.0f}".format(result.debours_details.expeditions) }} FCFA</span></div>
+                        </div>
+                    </section>
+
+                    <div class="flex flex-col gap-4">
+                        <form method="POST"
+                            class="p-6 border-2 border-dashed border-green-200 bg-green-50 rounded-2xl space-y-4">
+                            <input type="hidden" name="action" value="save">
+                            <input type="hidden" name="capital" value="{{ params.capital }}">
+                            <select name="dossier_id" class="block w-full rounded-lg border-green-300 p-3">
+                                <option value="">-- Choisir un dossier --</option>
+                                {% for dossier in dossiers %}
+                                <option value="{{ dossier.id }}">{{ dossier.numero_dossier }} - {{ dossier.nom_dossier
+                                    }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit"
+                                class="w-full py-4 bg-green-600 text-white font-bold rounded-xl">SAUVEGARDER AU
+                                DOSSIER</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

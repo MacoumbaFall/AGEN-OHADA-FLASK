@@ -37,17 +37,14 @@ def index():
 def create():
     form = ClientForm()
     if form.validate_on_submit():
-        client = Client(
-            type_client=form.type_client.data,
-            nom=form.nom.data,
-            prenom=form.prenom.data,
-            date_naissance=form.date_naissance.data,
-            lieu_naissance=form.lieu_naissance.data,
-            adresse=form.adresse.data,
-            telephone=form.telephone.data,
-            email=form.email.data,
-            identifiant_unique=form.identifiant_unique.data
-        )
+        client = Client()
+        form.populate_obj(client)
+        
+        # specific KYC updates
+        if client.kyc_statut == 'VALIDE' and not client.kyc_date_verification:
+            from datetime import datetime
+            client.kyc_date_verification = datetime.utcnow()
+            
         db.session.add(client)
         db.session.commit()
         flash('Client créé avec succès.', 'success')
@@ -74,15 +71,14 @@ def edit(id):
         return redirect(url_for('clients.index'))
     form = ClientForm(obj=client)
     if form.validate_on_submit():
-        client.type_client = form.type_client.data
-        client.nom = form.nom.data
-        client.prenom = form.prenom.data
-        client.date_naissance = form.date_naissance.data
-        client.lieu_naissance = form.lieu_naissance.data
-        client.adresse = form.adresse.data
-        client.telephone = form.telephone.data
-        client.email = form.email.data
-        client.identifiant_unique = form.identifiant_unique.data
+        was_not_valide = client.kyc_statut != 'VALIDE'
+        
+        form.populate_obj(client)
+        
+        if client.kyc_statut == 'VALIDE' and was_not_valide:
+            from datetime import datetime
+            client.kyc_date_verification = datetime.utcnow()
+            
         db.session.commit()
         flash('Client modifié avec succès.', 'success')
         return redirect(url_for('clients.view', id=client.id))

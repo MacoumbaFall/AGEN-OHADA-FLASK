@@ -6,13 +6,20 @@ def test_templates_index(client, auth):
     auth.login()
     response = client.get('/actes/templates')
     assert response.status_code == 200
-    assert b'Mod\xc3\xa8les' in response.data or b'Mod\xe8les' in response.data
+    assert b'Mod\xc3\xa8le' in response.data or b'Mod\xe8le' in response.data
 
-def test_template_create(client, auth):
+def test_template_create(client, auth, app):
     auth.login()
+    with app.app_context():
+        from app.models import TypeActe
+        ta = TypeActe(nom='VENTE')
+        db.session.add(ta)
+        db.session.commit()
+        ta_id = ta.id
+
     response = client.post('/actes/templates/new', data={
         'nom': 'Template Test',
-        'type_acte': 'VENTE',
+        'type_acte': ta_id,
         'description': 'Description Test',
         'contenu': '<p>Contenu Test {{ dossier.intitule }}</p>',
         'submit': 'Enregistrer'
@@ -31,6 +38,10 @@ def test_act_generation(client, auth, app):
         # Setup Data
         user = db.session.execute(db.select(User).filter_by(username='admin')).scalar_one()
         
+        from app.models import TypeActe
+        ta = TypeActe(nom='VENTE')
+        db.session.add(ta)
+        
         dossier = Dossier(
             numero_dossier='DOS-ACTE-01', 
             intitule='Dossier Acte Test', 
@@ -41,7 +52,7 @@ def test_act_generation(client, auth, app):
         
         template = Template(
             nom='Template Vente Test',
-            type_acte='VENTE',
+            type_acte=ta,
             contenu='<h1>Acte de Vente</h1><p>Dossier: {{ dossier.numero_dossier }}</p>'
         )
         db.session.add(template)

@@ -1,124 +1,235 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="md:grid md:grid-cols-3 md:gap-6">
         <div class="md:col-span-1">
-            <div class="px-4 sm:px-0">
-                <h3 class="text-lg font-medium leading-6 text-gray-900">{{ title }}</h3>
-                <p class="mt-1 text-sm text-gray-600">
-                    Remplissez les informations ci-contre pour {% if 'Nouveau' in title %}créer un nouveau{% else
-                    %}modifier le{% endif %} client.
+            <div class="px-4 sm:px-0 sticky top-6">
+                <h3 class="text-xl font-bold leading-6 text-gray-900">{{ title }}</h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    Saisissez les informations d'identité, de contact et le suivi des pièces justificatives KYC du
+                    client.
                 </p>
+                <div class="mt-6 bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md">
+                    <p class="text-sm text-indigo-700">
+                        <strong class="font-bold">Statut KYC</strong><br>
+                        Le statut KYC permet de suivre si le dossier du client est conforme (pièce d'identité valide,
+                        NINEA fourni).
+                    </p>
+                </div>
             </div>
         </div>
         <div class="mt-5 md:mt-0 md:col-span-2">
-            <div class="shadow sm:rounded-md sm:overflow-hidden">
-                <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-                    <form method="POST" action="">
-                        {{ form.hidden_tag() }}
+            <form method="POST" action="" class="space-y-6">
+                {{ form.hidden_tag() }}
 
+                <!-- SECTION: IDENTITE -->
+                <div class="bg-white shadow sm:rounded-md sm:overflow-hidden">
+                    <div
+                        class="bg-gray-50 px-4 py-3 border-b border-gray-200 uppercase text-xs font-bold tracking-wider text-gray-500">
+                        Identité Générale
+                    </div>
+                    <div class="px-4 py-5 space-y-6 sm:p-6">
                         <div class="grid grid-cols-6 gap-6">
                             <div class="col-span-6 sm:col-span-3">
                                 <label for="type_client" class="block text-sm font-medium text-gray-700">Type de
                                     Client</label>
                                 {{ form.type_client(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm", onchange="toggleFields()") }}
-                                {% for error in form.type_client.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
 
-                            <div class="col-span-6">
-                                <label for="nom" id="label_nom"
-                                    class="block text-sm font-medium text-gray-700">Nom</label>
+                            <!-- KYC Statut (Header Level) -->
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="kyc_statut" class="block text-sm font-medium text-gray-700">Conformité
+                                    KYC</label>
+                                {{ form.kyc_statut(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-bold") }}
+                            </div>
+
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="nom" id="label_nom" class="block text-sm font-medium text-gray-700">Nom /
+                                    Raison Sociale</label>
                                 {{ form.nom(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
-                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.nom.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase") }}
                             </div>
 
                             <div class="col-span-6 sm:col-span-3 field-physique">
-                                <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom</label>
+                                <label for="prenom" class="block text-sm font-medium text-gray-700">Prénom(s)</label>
                                 {{ form.prenom(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
-                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.prenom.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm capitalize") }}
                             </div>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3 field-physique">
+                        <!-- Champs spécifiques PERSONNE PHYSIQUE -->
+                        <div class="grid grid-cols-6 gap-6 pt-4 border-t border-gray-100 field-physique">
+                            <div class="col-span-6 sm:col-span-3">
                                 <label for="date_naissance" class="block text-sm font-medium text-gray-700">Date de
-                                    Naissance / Création</label>
+                                    Naissance</label>
                                 {{ form.date_naissance(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.date_naissance.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
-
-                            <div class="col-span-6 sm:col-span-3 field-physique">
+                            <div class="col-span-6 sm:col-span-3">
                                 <label for="lieu_naissance" class="block text-sm font-medium text-gray-700">Lieu de
                                     Naissance</label>
                                 {{ form.lieu_naissance(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.lieu_naissance.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
-
-                            <div class="col-span-6">
-                                <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse</label>
-                                {{ form.adresse(rows=3, class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="profession"
+                                    class="block text-sm font-medium text-gray-700">Profession</label>
+                                {{ form.profession(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.adresse.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="nationalite"
+                                    class="block text-sm font-medium text-gray-700">Nationalité</label>
+                                {{ form.nationalite(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="situation_matrimoniale"
+                                    class="block text-sm font-medium text-gray-700">Situation Matrimoniale</label>
+                                {{ form.situation_matrimoniale(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="regime_matrimonial" class="block text-sm font-medium text-gray-700">Régime
+                                    Matrimonial</label>
+                                {{ form.regime_matrimonial(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                        </div>
 
+                        <!-- Champs spécifiques PERSONNE MORALE -->
+                        <div class="grid grid-cols-6 gap-6 pt-4 border-t border-gray-100 field-morale"
+                            style="display: none;">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="forme_juridique" class="block text-sm font-medium text-gray-700">Forme
+                                    Juridique (SARL, SA...)</label>
+                                {{ form.forme_juridique(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="capital_social" class="block text-sm font-medium text-gray-700">Capital
+                                    Social</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    {{ form.capital_social(class="block w-full rounded-md border-gray-300
+                                    focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm pr-12") }}
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">FCFA</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="rccm" class="block text-sm font-medium text-gray-700">Numéro RCCM</label>
+                                {{ form.rccm(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="ninea" class="block text-sm font-medium text-gray-700">NINEA</label>
+                                {{ form.ninea(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: COORDONNEES -->
+                <div class="bg-white shadow sm:rounded-md sm:overflow-hidden">
+                    <div
+                        class="bg-gray-50 px-4 py-3 border-b border-gray-200 uppercase text-xs font-bold tracking-wider text-gray-500">
+                        Coordonnées & Contact
+                    </div>
+                    <div class="px-4 py-5 space-y-6 sm:p-6">
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6">
+                                <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse / Siège
+                                    Social</label>
+                                {{ form.adresse(rows=2, class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
                             <div class="col-span-6 sm:col-span-3">
                                 <label for="telephone" class="block text-sm font-medium text-gray-700">Téléphone</label>
                                 {{ form.telephone(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.telephone.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
-
                             <div class="col-span-6 sm:col-span-3">
                                 <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                                 {{ form.email(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.email.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
                             </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- SECTION: KYC / PIECES D'IDENTITE -->
+                <div class="bg-white shadow sm:rounded-md sm:overflow-hidden">
+                    <div
+                        class="bg-gray-50 px-4 py-3 border-b border-gray-200 uppercase text-xs font-bold tracking-wider text-gray-500">
+                        Pièces d'Identification (KYC)
+                    </div>
+                    <div class="px-4 py-5 space-y-6 sm:p-6">
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="type_piece_identite" class="block text-sm font-medium text-gray-700">Type de
+                                    Pièce</label>
+                                {{ form.type_piece_identite(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="numero_piece_identite"
+                                    class="block text-sm font-medium text-gray-700">Numéro de Pièce</label>
+                                {{ form.numero_piece_identite(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="date_emission_piece" class="block text-sm font-medium text-gray-700">Date de
+                                    délivrance</label>
+                                {{ form.date_emission_piece(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="date_expiration_piece" class="block text-sm font-medium text-gray-700">Date
+                                    d'expiration</label>
+                                {{ form.date_expiration_piece(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
+                            <div class="col-span-6 sm:col-span-3">
+                                <label for="autorite_emission_piece"
+                                    class="block text-sm font-medium text-gray-700">Autorité d'émission</label>
+                                {{ form.autorite_emission_piece(class="mt-1 block w-full rounded-md border-gray-300
+                                shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
+                            </div>
                             <div class="col-span-6 sm:col-span-3">
                                 <label for="identifiant_unique"
-                                    class="block text-sm font-medium text-gray-700">Identifiant Unique
-                                    (CNI/NINEA)</label>
+                                    class="block text-sm font-medium text-gray-700">Identifiant Ancien Sécurité</label>
                                 {{ form.identifiant_unique(class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
                                 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
-                                {% for error in form.identifiant_unique.errors %}
-                                <span class="text-red-500 text-xs">{{ error }}</span>
-                                {% endfor %}
+                            </div>
+
+                            <div class="col-span-6 border-t border-gray-100 pt-4">
+                                <label for="kyc_notes" class="block text-sm font-medium text-gray-700">Notes KYC &
+                                    Conformité</label>
+                                <p class="text-xs text-gray-500 mb-2">Inscrivez toute observation concernant la
+                                    vérification d'identité (PEP, alertes blanchiment, justificatifs manquants...)</p>
+                                {{ form.kyc_notes(rows=2, class="mt-1 block w-full rounded-md border-gray-300 shadow-sm
+                                focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm") }}
                             </div>
                         </div>
+                    </div>
 
-                        <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 mt-6">
-                            <a href="{{ url_for('clients.index') }}"
-                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-3">
-                                Annuler
-                            </a>
-                            {{ form.submit(class="inline-flex justify-center py-2 px-4 border border-transparent
-                            shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700
-                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
-                        </div>
-                    </form>
+                    <div
+                        class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end gap-3 border-t border-gray-200">
+                        <a href="{{ url_for('clients.index') }}"
+                            class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Annuler
+                        </a>
+                        {{ form.submit(class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm
+                        text-sm font-bold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none
+                        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500") }}
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>
@@ -126,20 +237,38 @@
 <script>
     function toggleFields() {
         const typeSelect = document.getElementById('type_client');
+        const kycStatus = document.getElementById('kyc_statut');
         const selectedValue = typeSelect.value;
         const nomLabel = document.getElementById('label_nom');
         const physiqueFields = document.querySelectorAll('.field-physique');
+        const moraleFields = document.querySelectorAll('.field-morale');
 
         if (selectedValue === 'MORALE') {
-            nomLabel.innerText = 'Raison Sociale';
+            nomLabel.innerText = 'Raison Sociale / Nom de L\'entreprise';
             physiqueFields.forEach(el => el.style.display = 'none');
+            moraleFields.forEach(el => el.style.display = 'flex');
         } else {
-            nomLabel.innerText = 'Nom';
+            nomLabel.innerText = 'Nom de Famille';
             physiqueFields.forEach(el => el.style.display = 'block');
+            moraleFields.forEach(el => el.style.display = 'none');
+        }
+
+        // Color code KYC
+        if (kycStatus) {
+            kycStatus.classList.remove('text-red-600', 'text-green-600', 'text-yellow-600');
+            if (kycStatus.value === 'VALIDE') kycStatus.classList.add('text-green-600');
+            else if (kycStatus.value === 'A_VERIFIER') kycStatus.classList.add('text-yellow-600');
+            else kycStatus.classList.add('text-red-600');
         }
     }
 
     // Run on load
-    document.addEventListener('DOMContentLoaded', toggleFields);
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleFields();
+        const kycStatus = document.getElementById('kyc_statut');
+        if (kycStatus) {
+            kycStatus.addEventListener('change', toggleFields);
+        }
+    });
 </script>
 {% endblock %}

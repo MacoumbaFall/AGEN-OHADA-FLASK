@@ -1,0 +1,1141 @@
+from flask import render_template, flash, redirect, url_for, request
+from flask_login import login_required
+from app import db
+from app.actes import bp
+from app.models import Dossier, Acte, TypeActe
+from app.decorators import role_required
+from datetime import datetime
+
+from app.actes.calculators.succession import SuccessionCalculator
+from app.actes.calculators.societe import SarlCalculator, SciCalculator, SaCalculator
+from app.actes.calculators.vente import VenteCalculator
+from app.actes.calculators.bail import BailCalculator
+from app.actes.calculators.cession_parts import CessionPartsCalculator
+from app.actes.calculators.donation_partage import DonationCalculator, PartageCalculator
+from app.actes.calculators.vente_divers import AdjudicationCalculator, AugmentationCapitalCalculator
+from app.actes.calculators.garanties import MainleveeCalculator, MortgageCalculator
+from app.actes.calculators.echange import EchangeCalculator
+from app.actes.calculators.societe_divers import SocieteModifCalculator, FondsCommerceCalculator
+from app.actes.calculators.dation import DationCalculator
+from app.actes.calculators.divers import DiversCalculator
+from app.actes.calculators.tpv import TPVCalculator
+from app.actes.calculators.ao import AOCalculator
+
+# --- CALCUL DE PROVISION SUR FRAIS ET HONORAIRES ---
+
+@bp.route('/types/<int:id>/bareme', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def type_acte_bareme(id):
+    ta = db.session.get(TypeActe, id)
+    if not ta:
+        flash('Type d\'acte introuvable.', 'error')
+        return redirect(url_for('actes.types_acte_index'))
+    
+    # Redirection vers le calculateur spécifique si disponible
+    nom_upper = ta.nom.upper()
+    if nom_upper == 'SUCCESSION':
+        return redirect(url_for('actes.bareme_succession', type_id=id))
+    elif any(s in nom_upper for s in ['SARL', 'S.A.R.L']):
+        if 'AUGM' in nom_upper:
+             return redirect(url_for('actes.bareme_augmentation', type_id=id))
+        if 'DISSOL' in nom_upper:
+             return redirect(url_for('actes.bareme_dissolution', type_id=id))
+        return redirect(url_for('actes.bareme_sarl', type_id=id))
+    elif any(s in nom_upper for s in ['SCI', 'S.C.I']):
+        return redirect(url_for('actes.bareme_sci', type_id=id))
+    elif any(s in nom_upper for s in ['SA', 'S.A']) and 'CA' in nom_upper:
+        return redirect(url_for('actes.bareme_sa', type_id=id))
+    elif 'ADJUD' in nom_upper:
+        return redirect(url_for('actes.bareme_adjudication', type_id=id))
+    elif 'DAT' in nom_upper and 'PAIEMENT' in nom_upper:
+        return redirect(url_for('actes.bareme_dation', type_id=id))
+    elif 'VENTE' in nom_upper or 'VTE' in nom_upper:
+        return redirect(url_for('actes.bareme_vente', type_id=id))
+    elif 'BAIL' in nom_upper:
+        if 'LOCAT' in nom_upper and 'GERAN' in nom_upper:
+             return redirect(url_for('actes.bareme_location_gerance', type_id=id))
+        return redirect(url_for('actes.bareme_bail', type_id=id))
+    elif 'CES' in nom_upper and 'PARTS' in nom_upper:
+        return redirect(url_for('actes.bareme_cession_parts', type_id=id))
+    elif 'DONAT' in nom_upper:
+        return redirect(url_for('actes.bareme_donation', type_id=id))
+    elif 'PARTAGE' in nom_upper:
+        return redirect(url_for('actes.bareme_partage', type_id=id))
+    elif 'AUGM' in nom_upper:
+        return redirect(url_for('actes.bareme_augmentation', type_id=id))
+    elif 'ML' == nom_upper or 'MAINLEV' in nom_upper:
+        return redirect(url_for('actes.bareme_mainlevee', type_id=id))
+    elif 'HYPOT' in nom_upper or 'O. C' in nom_upper or 'O.C' in nom_upper:
+        if 'NANTIS' in nom_upper:
+             return redirect(url_for('actes.bareme_nantissement', type_id=id))
+        return redirect(url_for('actes.bareme_mortgage', type_id=id))
+    elif 'ECHANG' in nom_upper or 'ECHGE' in nom_upper:
+        return redirect(url_for('actes.bareme_echange', type_id=id))
+    elif 'DISSOL' in nom_upper:
+        return redirect(url_for('actes.bareme_dissolution', type_id=id))
+    elif 'TRANSFORM' in nom_upper:
+        return redirect(url_for('actes.bareme_transformation', type_id=id))
+    elif 'FONDS' in nom_upper and 'COMMERCE' in nom_upper:
+        return redirect(url_for('actes.bareme_fonds_commerce', type_id=id))
+    elif 'RGT' in nom_upper or 'CO PROP' in nom_upper or 'COPROP' in nom_upper:
+        return redirect(url_for('actes.bareme_copropriete', type_id=id))
+    elif 'MANDAT' in nom_upper and 'SEQUESTRE' in nom_upper:
+        return redirect(url_for('actes.bareme_mandat_sequestre', type_id=id))
+    elif 'DEPOT' in nom_upper:
+        return redirect(url_for('actes.bareme_acte_depot', type_id=id))
+    elif 'CESS' in nom_upper and 'CREANCE' in nom_upper:
+        return redirect(url_for('actes.bareme_cession_creances', type_id=id))
+    elif 'NANTISSEMENT' in nom_upper:
+        return redirect(url_for('actes.bareme_nantissement', type_id=id))
+    elif 'TPV' in nom_upper or 'PLUS-VALUE' in nom_upper:
+        return redirect(url_for('actes.bareme_tpv', type_id=id))
+    elif 'A.O' in nom_upper or 'OCCUPER' in nom_upper or 'AUTORISATION' in nom_upper:
+        return redirect(url_for('actes.bareme_ao', type_id=id))
+    
+    flash(f'Le module de calcul pour {ta.nom} n\'est pas encore disponible.', 'info')
+    return redirect(url_for('actes.types_acte_index'))
+
+@bp.route('/bareme/succession', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_succession():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'valeur_immeuble': float(request.form.get('valeur_immeuble', 0) or 0),
+            'reste_actif': float(request.form.get('reste_actif', 0) or 0),
+            'passif': float(request.form.get('passif', 0) or 0),
+            'mois_penalite': int(request.form.get('mois_penalite', 0) or 0),
+            'inclure_conservation': request.form.get('inclure_conservation') == 'on',
+            'lieu_deces': int(request.form.get('lieu_deces', 1) or 1),
+            'parente': int(request.form.get('parente', 1) or 1)
+        }
+        result = SuccessionCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if not dossier_id:
+                flash('Veuillez sélectionner un dossier pour sauvegarder.', 'error')
+            else:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'SUCCESSION',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision sauvegardée dans le dossier {dossier.numero_dossier}.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_succession.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/sarl', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_sarl():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'capital': float(request.form.get('capital', 0) or 0)
+        }
+        result = SarlCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'SARL',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision SARL sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_sarl.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/sci', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_sci():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'capital': float(request.form.get('capital', 0) or 0)
+        }
+        result = SciCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'SCI',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision SCI sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_sci.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/sa', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_sa():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'capital': float(request.form.get('capital', 0) or 0)
+        }
+        result = SaCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'SA',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision SA sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_sa.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/vente', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_vente():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix': float(request.form.get('prix', 0) or 0),
+            'taux_enregistrement': float(request.form.get('taux_enregistrement', 10) or 10),
+            'morcellement': request.form.get('morcellement') == 'on'
+        }
+        result = VenteCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'VENTE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision VENTE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_vente.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/bail', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_bail():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'loyer_mensuel': float(request.form.get('loyer_mensuel', 0) or 0),
+            'duree_mois': int(request.form.get('duree_mois', 12) or 12)
+        }
+        result = BailCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'BAIL',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision BAIL sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_bail.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/cession_parts', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_cession_parts():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix': float(request.form.get('prix', 0) or 0)
+        }
+        result = CessionPartsCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'CESSION_PARTS',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision CESSION DE PARTS sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_cession_parts.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/donation', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_donation():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'valeur': float(request.form.get('valeur', 0) or 0),
+            'parente': int(request.form.get('parente', 1) or 1)
+        }
+        result = DonationCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'DONATION',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision DONATION sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_donation.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/partage', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_partage():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0),
+            'soulte': float(request.form.get('soulte', 0) or 0),
+            'valeur_hypotheque': float(request.form.get('valeur_hypotheque', 0) or 0)
+        }
+        result = PartageCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'PARTAGE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision PARTAGE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_partage.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/adjudication', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_adjudication():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix': float(request.form.get('prix', 0) or 0),
+            'morcellement': request.form.get('morcellement') == 'on'
+        }
+        result = AdjudicationCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'ADJUDICATION',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision ADJUDICATION sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_adjudication.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/augmentation', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_augmentation():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'ancien_capital': float(request.form.get('ancien_capital', 0) or 0),
+            'nouveau_capital': float(request.form.get('nouveau_capital', 0) or 0)
+        }
+        result = AugmentationCapitalCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'AUGMENTATION_CAPITAL',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision AUGMENTATION DE CAPITAL sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_augmentation.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/mainlevee', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_mainlevee():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0)
+        }
+        result = MainleveeCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'MAINLEVEE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision MAINLEVEE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_mainlevee.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/mortgage', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_mortgage():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0)
+        }
+        result = MortgageCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'HYPOTHEQUE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision HYPOTHEQUE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_mortgage.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/echange', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_echange():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'valeur_base': float(request.form.get('valeur_base', 0) or 0),
+            'soulte': float(request.form.get('soulte', 0) or 0)
+        }
+        result = EchangeCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'ECHANGE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision ECHANGE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_echange.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/dissolution', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_dissolution():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'capital': float(request.form.get('capital', 0) or 0)
+        }
+        result = SocieteModifCalculator.calculate_dissolution(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'DISSOLUTION',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision DISSOLUTION sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_dissolution.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/transformation', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_transformation():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'capital': float(request.form.get('capital', 0) or 0)
+        }
+        result = SocieteModifCalculator.calculate_transformation(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'TRANSFORMATION',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision TRANSFORMATION sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_transformation.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/fonds_commerce', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_fonds_commerce():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix_cession': float(request.form.get('prix_cession', 0) or 0),
+            'valeur_fonds': float(request.form.get('valeur_fonds', 0) or 0),
+            'marchandises': float(request.form.get('marchandises', 0) or 0)
+        }
+        result = FondsCommerceCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'FONDS_COMMERCE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision FONDS DE COMMERCE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_fonds_commerce.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/dation', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_dation():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix': float(request.form.get('prix', 0) or 0),
+            'taux_enregistrement': int(request.form.get('taux_enregistrement', 10) or 10),
+            'morcellement': request.form.get('morcellement') == 'on'
+        }
+        result = DationCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'DATION_PAIEMENT',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision DATION EN PAIEMENT sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_dation.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/location_gerance', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_location_gerance():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'loyer_mensuel': float(request.form.get('loyer_mensuel', 0) or 0),
+            'duree_mois': int(request.form.get('duree_mois', 1) or 1)
+        }
+        result = DiversCalculator.calculate_location_gerance(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'LOCATION_GERANCE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision LOCATION GÉRANCE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_location_gerance.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/copropriete', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_copropriete():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'valeur_immeuble': float(request.form.get('valeur_immeuble', 0) or 0),
+            'nb_titres': int(request.form.get('nb_titres', 1) or 1)
+        }
+        result = DiversCalculator.calculate_copropriete(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'COPROPRIETE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision COPROPRIÉTÉ sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_copropriete.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/mandat_sequestre', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_mandat_sequestre():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0)
+        }
+        result = DiversCalculator.calculate_mandat_sequestre(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'MANDAT_SEQUESTRE',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision MANDAT SEQUESTRE sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_mandat_sequestre.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/acte_depot', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_acte_depot():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'nb_annexes': int(request.form.get('nb_annexes', 1) or 1),
+            'penalites_mois': int(request.form.get('penalites_mois', 0) or 0)
+        }
+        result = DiversCalculator.calculate_acte_depot(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'ACTE_DEPOT',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision ACTE DE DÉPÔT sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_acte_depot.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/cession_creances', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_cession_creances():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0)
+        }
+        result = DiversCalculator.calculate_cession_creances(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'CESSION_CREANCES',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision CESSION DE CRÉANCES sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_cession_creances.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/nantissement', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_nantissement():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'montant': float(request.form.get('montant', 0) or 0)
+        }
+        result = DiversCalculator.calculate_nantissement(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'NANTISSEMENT',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision NANTISSEMENT sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_nantissement.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/tpv', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_tpv():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'prix_acquisition': float(request.form.get('prix_acquisition', 0) or 0),
+            'annee_acquisition': int(request.form.get('annee_acquisition', datetime.now().year) or datetime.now().year),
+            'annee_vente': int(request.form.get('annee_vente', datetime.now().year) or datetime.now().year),
+            'prix_vente': float(request.form.get('prix_vente', 0) or 0),
+            'depenses_travaux': float(request.form.get('depenses_travaux', 0) or 0)
+        }
+        result = TPVCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'TPV',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision PLUS-VALUE (TPV) sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_tpv.html', result=result, params=params, dossiers=dossiers)
+
+@bp.route('/bareme/ao', methods=['GET', 'POST'])
+@login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
+def bareme_ao():
+    result = None
+    params = {}
+    dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        params = {
+            'valeur': float(request.form.get('valeur', 0) or 0),
+            'taux_enregistrement': float(request.form.get('taux_enregistrement', 10.0) or 10.0),
+            'include_cf': request.form.get('include_cf') == 'on'
+        }
+        result = AOCalculator.calculate(**params)
+        
+        if action == 'save' and result:
+            dossier_id = request.form.get('dossier_id')
+            if dossier_id:
+                dossier = db.session.get(Dossier, int(dossier_id))
+                if dossier:
+                    acte = Acte(
+                        dossier_id=dossier.id,
+                        type_acte='NOTE DE PROVISION',
+                        statut='BROUILLON',
+                        contenu_json={
+                            'type': 'AUTORISATION D\'OCCUPER',
+                            'params': params,
+                            'result': result,
+                            'date_simulation': datetime.utcnow().isoformat()
+                        },
+                        version=1
+                    )
+                    db.session.add(acte)
+                    db.session.commit()
+                    flash(f'Note de provision A.O sauvegardée.', 'success')
+                    return redirect(url_for('dossiers.view', id=dossier.id))
+        
+    return render_template('actes/bareme_ao.html', result=result, params=params, dossiers=dossiers)

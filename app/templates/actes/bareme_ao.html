@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Calculateur : Autorisation d'occuper / Permis d'occuper
+            </h1>
+            <p class="mt-2 text-sm text-gray-700">Calcul des honoraires, droits d'enregistrement et débours pour les
+                autorisations d'occuper.</p>
+        </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Formulaire -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <form method="POST">
+                <div class="space-y-6">
+                    <div>
+                        <label for="valeur" class="block text-sm font-medium text-gray-700">Valeur de l'Apport / Objet
+                            (FCFA)</label>
+                        <input type="number" name="valeur" id="valeur" value="{{ params.valeur or '' }}" required
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="taux_enregistrement" class="block text-sm font-medium text-gray-700">Taux
+                                Enregistrement (%)</label>
+                            <select name="taux_enregistrement" id="taux_enregistrement"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="10" {% if params.taux_enregistrement==10 %}selected{% endif %}>10%
+                                    (Standard property)</option>
+                                <option value="5" {% if params.taux_enregistrement==5 %}selected{% endif %}>5% (Standard
+                                    sale)</option>
+                                <option value="1" {% if params.taux_enregistrement==1 %}selected{% endif %}>1%
+                                    (Preferential)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center mt-6">
+                            <input type="checkbox" name="include_cf" id="include_cf" {% if params.include_cf %}checked{%
+                                endif %} class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="include_cf" class="ml-2 block text-sm text-gray-900">Inclure Conservation
+                                Foncière (CF)</label>
+                        </div>
+                    </div>
+
+                    <div class="flex items-end gap-3">
+                        <button type="submit" name="action" value="calculate"
+                            class="flex-1 bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Calculer les frais
+                        </button>
+                    </div>
+
+                    {% if result %}
+                    <div class="pt-6 border-t border-gray-200">
+                        <label for="dossier_id" class="block text-sm font-medium text-gray-700">Sauvegarder dans un
+                            dossier</label>
+                        <div class="mt-1 flex gap-2">
+                            <select name="dossier_id" id="dossier_id"
+                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">-- Sélectionner un dossier --</option>
+                                {% for d in dossiers %}
+                                <option value="{{ d.id }}">{{ d.numero_dossier }} - {{ d.intitule }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" name="action" value="save"
+                                class="bg-green-600 border border-transparent rounded-md shadow-sm py-2 px-4 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                Sauvegarder
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Résultats -->
+        {% if result %}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Détails de la Note : Autorisation d'occuper</h3>
+            </div>
+            <div class="px-4 py-5 sm:p-6 space-y-4">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Base de calcul (Valeur) :</span>
+                    <span class="font-medium text-gray-900">{{ "{:,.0f}".format(result.base) }} FCFA</span>
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="text-sm font-semibold text-gray-900 border-b pb-1">Émoluments HT</h4>
+                    <table class="min-w-full text-xs mt-2">
+                        <thead>
+                            <tr class="text-gray-500 text-left">
+                                <th class="pb-1">Tranche</th>
+                                <th class="pb-1 text-center">Taux</th>
+                                <th class="pb-1 text-right">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for h in result.honoraires_details %}
+                            <tr>
+                                <td class="py-1">{{ h.tranche }}</td>
+                                <td class="py-1 text-center">{{ h.taux }}</td>
+                                <td class="py-1 text-right">{{ "{:,.0f}".format(h.montant) }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="2" class="py-2 px-1">Total Honoraires HT</td>
+                                <td class="py-2 text-right px-1">{{ "{:,.0f}".format(result.honoraires_ht) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">TVA (18%) :</span>
+                        <span class="font-medium text-gray-900">{{ "{:,.0f}".format(result.tva) }} FCFA</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Droits d'Enregistrement :</span>
+                        <span class="font-medium text-gray-900">{{ "{:,.0f}".format(result.enregistrement) }}
+                            FCFA</span>
+                    </div>
+                    {% if result.conservation_fonciere > 0 %}
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Conservation Foncière (CF) :</span>
+                        <span class="font-medium text-gray-900">{{ "{:,.0f}".format(result.conservation_fonciere) }}
+                            FCFA</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <h4 class="text-sm font-semibold text-gray-900 border-b pb-1">Débours & Frais</h4>
+                    {% for label, val in result.debours_details.items() %}
+                    <div class="flex justify-between text-xs mt-2">
+                        <span class="text-gray-500 uppercase">{{ label }} :</span>
+                        <span>{{ "{:,.0f}".format(val) }} FCFA</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-6 pt-4 border-t-2 border-indigo-100">
+                    <div class="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
+                        <span class="text-base font-bold text-indigo-900">TOTAL GÉNÉRAL :</span>
+                        <span class="text-2xl font-black text-indigo-600">{{ "{:,.0f}".format(result.total_general) }}
+                            FCFA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

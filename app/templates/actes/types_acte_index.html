@@ -50,6 +50,8 @@
                                     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                     <a href="{{ url_for('actes.type_acte_edit', id=type.id) }}"
                                         class="text-indigo-600 hover:text-indigo-900 mr-4">Modifier</a>
+                                    <a href="{{ url_for('actes.type_acte_bareme', id=type.id) }}"
+                                        class="text-green-600 hover:text-green-900 mr-4">Barème</a>
                                     <form action="{{ url_for('actes.type_acte_delete', id=type.id) }}" method="POST"
                                         class="inline-block" onsubmit="return confirm('Supprimer ce type ?');">
                                         <button type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>

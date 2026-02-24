@@ -102,6 +102,7 @@
 
         {% if current_user.role == 'ADMIN' %}
         {% set _ = navigation.append(('users.index', 'Utilisateurs')) %}
+        {% set _ = navigation.append(('users.parametres_etude', '⚙ Paramètres')) %}
         {% endif %}
 
         {% set _ = navigation.append(('main.help', 'Aide')) %}

@@ -13,6 +13,10 @@ def test_create_formalite(client, auth, app):
     dossier_id = None
     
     with app.app_context():
+        from app.models import TypeFormalite
+        tf = TypeFormalite(nom='ENREGISTREMENT')
+        db.session.add(tf)
+        
         user = db.session.execute(db.select(User).filter_by(username='admin')).scalar_one()
         dossier = Dossier(
             numero_dossier='DOS-FORM-01', 
@@ -23,10 +27,11 @@ def test_create_formalite(client, auth, app):
         db.session.add(dossier)
         db.session.commit()
         dossier_id = dossier.id
+        tf_id = tf.id
 
     response = client.post('/formalites/new', data={
         'dossier': dossier_id,
-        'type_formalite': 'ENREGISTREMENT',
+        'type_id': tf_id,
         'statut': 'A_FAIRE',
         'cout_estime': '50000',
         'submit': 'Enregistrer'
