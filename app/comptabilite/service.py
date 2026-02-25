@@ -325,38 +325,76 @@ class ComptabiliteService:
         """
         Get the general ledger (Grand Livre).
         
-        Returns a list of movements with running balances.
+        Returns a list of structured dictionaries for the template to group by account.
         """
-        query = db.select(ComptaMouvement).join(ComptaEcriture).filter(
-            ComptaEcriture.valide == True
-        )
-        
+        query_comptes = db.select(ComptaCompte).filter_by(actif=True)
         if compte_id:
-            query = query.filter(ComptaMouvement.compte_id == compte_id)
-        if date_debut:
-            query = query.filter(ComptaEcriture.date_ecriture >= date_debut)
-        if date_fin:
-            query = query.filter(ComptaEcriture.date_ecriture <= date_fin)
+            query_comptes = query_comptes.filter_by(id=compte_id)
         
-        query = query.order_by(ComptaEcriture.date_ecriture, ComptaEcriture.id)
-        
-        mouvements = db.session.execute(query).scalars().all()
+        comptes = db.session.execute(query_comptes.order_by(ComptaCompte.numero_compte)).scalars().all()
         
         result = []
-        solde = Decimal('0')
-        
-        for mouv in mouvements:
-            solde += Decimal(str(mouv.debit)) - Decimal(str(mouv.credit))
-            result.append({
-                'date': mouv.ecriture.date_ecriture,
-                'numero_piece': mouv.ecriture.numero_piece,
-                'libelle': mouv.ecriture.libelle_operation,
-                'compte': mouv.compte.numero_compte if mouv.compte else '',
-                'debit': mouv.debit,
-                'credit': mouv.credit,
-                'solde': solde
-            })
-        
+        for compte in comptes:
+            # 1. Calculer le solde initial (tous les mouvements AVANT date_debut)
+            solde_initial = Decimal('0')
+            if date_debut:
+                mouvements_initiaux = db.session.execute(
+                    db.select(ComptaMouvement).join(ComptaEcriture).filter(
+                        ComptaMouvement.compte_id == compte.id,
+                        ComptaEcriture.valide == True,
+                        ComptaEcriture.date_ecriture < date_debut
+                    )
+                ).scalars().all()
+                for mouv in mouvements_initiaux:
+                    solde_initial += Decimal(str(mouv.debit)) - Decimal(str(mouv.credit))
+            
+            # 2. Récupérer les mouvements de la période
+            query_mouv = db.select(ComptaMouvement).join(ComptaEcriture).filter(
+                ComptaMouvement.compte_id == compte.id,
+                ComptaEcriture.valide == True
+            )
+            
+            if date_debut:
+                query_mouv = query_mouv.filter(ComptaEcriture.date_ecriture >= date_debut)
+            if date_fin:
+                query_mouv = query_mouv.filter(ComptaEcriture.date_ecriture <= date_fin)
+                
+            query_mouv = query_mouv.order_by(ComptaEcriture.date_ecriture, ComptaEcriture.id)
+            mouvements = db.session.execute(query_mouv).scalars().all()
+            
+            # Si pas de mouvements et solde initial à 0, on peut ignorer le compte
+            if not mouvements and solde_initial == Decimal('0'):
+                continue
+                
+            compte_data = {
+                'compte': compte,
+                'solde_initial': solde_initial,
+                'ecritures': [],
+                'total_debit': Decimal('0'),
+                'total_credit': Decimal('0'),
+                'solde_final': solde_initial
+            }
+            
+            solde_cumule = solde_initial
+            
+            for mouv in mouvements:
+                montant = Decimal(str(mouv.debit)) - Decimal(str(mouv.credit))
+                solde_cumule += montant
+                
+                compte_data['total_debit'] += Decimal(str(mouv.debit))
+                compte_data['total_credit'] += Decimal(str(mouv.credit))
+                
+                compte_data['ecritures'].append({
+                    'date_ecriture': mouv.ecriture.date_ecriture,
+                    'libelle': mouv.ecriture.libelle_operation,
+                    'piece_reference': mouv.ecriture.numero_piece or '',
+                    'montant': montant,
+                    'solde_cumule': solde_cumule
+                })
+            
+            compte_data['solde_final'] = solde_cumule
+            result.append(compte_data)
+            
         return result
     
     @staticmethod

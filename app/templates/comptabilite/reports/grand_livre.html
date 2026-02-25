@@ -120,7 +120,7 @@
                         <td colspan="3" class="py-3 pl-4 pr-3 text-sm text-right font-medium sm:pl-6">Solde Initial</td>
                         <td class="px-3 py-3 text-sm text-right">{{ "{:,.0f}".format(compte_data.solde_initial) if
                             compte_data.solde_initial > 0 else '0' }}</td>
-                        <td class="px-3 py-3 text-sm text-right">{{ "{:,.0f}".format(abs(compte_data.solde_initial)) if
+                        <td class="px-3 py-3 text-sm text-right">{{ "{:,.0f}".format(compte_data.solde_initial|abs) if
                             compte_data.solde_initial < 0 else '0' }}</td>
                         <td class="px-3 py-3 text-sm text-right font-medium">{{
                             "{:,.0f}".format(compte_data.solde_initial) }}</td>
@@ -144,7 +144,7 @@
                             {% endif %}
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-900">
-                            {% if ecriture.montant < 0 %} {{ "{:,.0f}" .format(abs(ecriture.montant)) }} {% else %} - {%
+                            {% if ecriture.montant < 0 %} {{ "{:,.0f}" .format(ecriture.montant|abs) }} {% else %} - {%
                                 endif %} </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900">
                             {{ "{:,.0f}".format(ecriture.solde_cumule) }}
