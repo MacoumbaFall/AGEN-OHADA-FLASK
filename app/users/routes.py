@@ -41,6 +41,31 @@ def create():
         db.session.add(user)
         db.session.commit()
         
+        try:
+            from app.email import send_email
+            from flask import current_app
+            
+            mail_subject = "Bienvenue sur AGEN-OHADA !"
+            mail_body = f"""Bonjour {user.username},
+            
+Votre compte a été créé avec succès par l'administrateur.
+Vos identifiants de connexion :
+- Nom d'utilisateur : {user.username}
+- Mot de passe : {form.password.data}
+- Rôle attribué : {user.role}
+
+Cordialement,
+L'équipe AGEN-OHADA.
+"""
+            send_email(
+                subject=mail_subject,
+                sender=current_app.config['ADMINS'][0],
+                recipients=[user.email],
+                text_body=mail_body
+            )
+        except Exception as e:
+            current_app.logger.error(f'Could not send welcome email : {str(e)}')
+        
         flash(f'Utilisateur {user.username} créé avec succès.', 'success')
         return redirect(url_for('users.index'))
     
@@ -165,6 +190,28 @@ def reset_password(id):
         user.set_password(form.new_password.data)
         db.session.commit()
         
+        try:
+            from app.email import send_email
+            from flask import current_app
+            
+            mail_subject = "Réinitialisation de votre mot de passe"
+            mail_body = f"""Bonjour {user.username},
+            
+Votre mot de passe a été réinitialisé par un administrateur.
+Nouveau mot de passe : {form.new_password.data}
+
+Cordialement,
+L'équipe AGEN-OHADA.
+"""
+            send_email(
+                subject=mail_subject,
+                sender=current_app.config['ADMINS'][0],
+                recipients=[user.email],
+                text_body=mail_body
+            )
+        except Exception as e:
+            current_app.logger.error(f'Could not send reset password email : {str(e)}')
+            
         flash(f'Mot de passe de {user.username} réinitialisé avec succès.', 'success')
         return redirect(url_for('users.view', id=user.id))
     

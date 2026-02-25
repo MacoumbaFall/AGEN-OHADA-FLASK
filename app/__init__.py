@@ -2,11 +2,13 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_mail import Mail
 from app.config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
+mail = Mail()
 login.login_view = 'auth.login'
 login.login_message = 'Veuillez vous connecter pour accéder à cette page.'
 
@@ -33,6 +35,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login.init_app(app)
+    mail.init_app(app)
 
     # Register Blueprints
     from app.main import bp as main_bp
