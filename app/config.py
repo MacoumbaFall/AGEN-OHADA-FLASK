@@ -35,8 +35,17 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
 
 class ProductionConfig(Config):
-    # Inherit SECRET_KEY from Config if not set
-    SECRET_KEY = os.environ.get('SECRET_KEY') or Config.SECRET_KEY
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY or SECRET_KEY == 'dev-key-please-change':
+        raise ValueError("No SECRET_KEY set for production environment or using default dev key!")
+        
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError("No DATABASE_URL set for production environment!")
+        
+    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
+        
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
