@@ -1,4 +1,5 @@
 from flask import render_template, flash, redirect, url_for, request, current_app, abort
+from flask_wtf.csrf import validate_csrf, ValidationError
 from flask_login import login_required
 from app import db
 from app.actes import bp
@@ -83,6 +84,12 @@ def bareme_generic(slug):
     dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
     
     if request.method == 'POST':
+        # Manual CSRF Protection (SEC-07)
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            abort(400, "Jeton CSRF invalide.")
+
         action = request.form.get('action')
         
         # 1. Extraction standardisée des paramètres
@@ -160,6 +167,7 @@ def bareme_generic(slug):
 @bp.route('/bareme/ao', endpoint='bareme_ao')
 @bp.route('/bareme/succession', endpoint='bareme_succession')
 @login_required
+@role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def legacy_bareme_redirect():
     """
     Redirection automatique des anciennes URLs vers la nouvelle route générique.

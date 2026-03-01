@@ -10,8 +10,7 @@ class Config:
     if db_url and db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
     
-    SQLALCHEMY_DATABASE_URI = db_url or \
-        'postgresql+psycopg2://postgres:admin123@localhost:5432/agen_ohada'
+    SQLALCHEMY_DATABASE_URI = db_url or os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Defaults

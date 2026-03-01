@@ -11,7 +11,8 @@ import markdown2
 import os
 from werkzeug.utils import secure_filename
 from docxtpl import DocxTemplate
-from jinja2 import Template as JinjaTemplate
+from jinja2.sandbox import SandboxedEnvironment
+import bleach
 
 @bp.route('/generate', methods=['GET', 'POST'])
 @login_required
@@ -64,8 +65,8 @@ def generate():
                     flash('Génération réussie (Prévisualisation).', 'success')
 
         except Exception as e:
-            flash(f'Erreur lors de la génération: {str(e)}', 'error')
-            print(f"GENERATION ERROR: {str(e)}")
+            current_app.logger.error(f"GENERATION ERROR: {str(e)}")
+            flash(f'Une erreur est survenue lors de la génération de l\'acte.', 'error')
 
     return render_template('actes/generate.html', form=form, preview_content=preview_content, title='Générer un Acte')
 
@@ -133,6 +134,14 @@ def download_pdf(id):
 
     # Existing PDF generation for HTML/Markdown
     from xhtml2pdf import pisa
+    # Sanitize HTML before PDF generation (SEC-04)
+    allowed_tags = bleach.ALLOWED_TAGS | {
+        'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 
+        'span', 'div', 'hr', 'strong', 'em', 'u', 's', 'cite', 'code', 'pre', 'b', 'i'
+    }
+    allowed_attrs = {**bleach.ALLOWED_ATTRIBUTES, 'style': ['text-align', 'margin-left', 'width', 'font-family', 'font-size']}
+    sanitized_html = bleach.clean(acte.contenu_html, tags=allowed_tags, attributes=allowed_attrs)
+
     html_content = f"""
     <html>
     <head>
@@ -142,7 +151,7 @@ def download_pdf(id):
         </style>
     </head>
     <body>
-        {acte.contenu_html}
+        {sanitized_html}
     </body>
     </html>
     """
@@ -180,8 +189,14 @@ def edit_draft(id):
     
     if form.validate_on_submit():
         if acte.contenu_html and form.contenu_html.data:
-            acte.contenu_html = form.contenu_html.data
-            flash('Contenu mis à jour.', 'success')
+            # Sanitize HTML from manual edit (SEC-01)
+            allowed_tags = bleach.ALLOWED_TAGS | {
+                'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 
+                'span', 'div', 'hr', 'strong', 'em', 'u', 's', 'cite', 'code', 'pre', 'b', 'i'
+            }
+            allowed_attrs = {**bleach.ALLOWED_ATTRIBUTES, 'style': ['text-align', 'margin-left', 'width', 'font-family', 'font-size']}
+            acte.contenu_html = bleach.clean(form.contenu_html.data, tags=allowed_tags, attributes=allowed_attrs)
+            flash('Contenu mis à jour (et sécurisé).', 'success')
         
         if form.docx_file.data:
             file = form.docx_file.data
@@ -221,11 +236,15 @@ def sign_act(id):
         flash('Seul un acte finalisé peut être signé.', 'error')
         return redirect(url_for('actes.view_act', id=id))
     
-    # Placeholder for electronic signature logic
-    # In a real app, this would involve a certificate and a hash
+    # Improved placeholder for electronic signature logic (SEC-12)
+    # We add a hash of the content to provide some integrity verification
+    import hashlib
+    content_to_hash = (acte.contenu_html or "").encode()
+    content_hash = hashlib.sha256(content_to_hash).hexdigest()
+    
     acte.statut = 'SIGNE'
     acte.date_signature = datetime.utcnow()
-    acte.signature_electronique = f"SIGNED-BY-{current_user.username}-{datetime.utcnow().isoformat()}"
+    acte.signature_electronique = f"SIGNED-BY-{current_user.username}-{datetime.utcnow().isoformat()}-HASH-{content_hash[:16]}"
     db.session.commit()
     
     flash('L\'acte a été signé électroniquement.', 'success')

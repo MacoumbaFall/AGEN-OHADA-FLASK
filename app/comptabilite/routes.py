@@ -57,7 +57,8 @@ def init_accounts():
         ComptabiliteService.initialize_default_accounts()
         flash('Plan comptable initialisé avec succès.', 'success')
     except Exception as e:
-        flash(f'Erreur lors de l\'initialisation: {str(e)}', 'error')
+        current_app.logger.error(f"INITIALIZATION ERROR: {str(e)}")
+        flash('Une erreur est survenue lors de l\'initialisation du plan comptable.', 'error')
     return redirect(url_for('comptabilite.comptes_index'))
 
 # ===== COMPTES (ACCOUNTS) =====
@@ -334,7 +335,8 @@ def recettes_create():
             flash('Recette enregistrée avec succès.', 'success')
             return redirect(url_for('comptabilite.index'))
         except Exception as e:
-            flash(f'Erreur: {str(e)}', 'error')
+            current_app.logger.error(f"RECETTE ERROR: {str(e)}")
+            flash('Une erreur est survenue lors de l\'enregistrement de la recette.', 'error')
             
     return render_template('comptabilite/recettes/form.html', form=form, title='Enregistrer une Recette')
 
@@ -375,7 +377,8 @@ def depenses_create():
             flash('Dépense enregistrée avec succès.', 'success')
             return redirect(url_for('comptabilite.index'))
         except Exception as e:
-            flash(f'Erreur: {str(e)}', 'error')
+            current_app.logger.error(f"DEPENSE ERROR: {str(e)}")
+            flash('Une erreur est survenue lors de l\'enregistrement de la dépense.', 'error')
 
     return render_template('comptabilite/depenses/form.html', form=form, title='Enregistrer une Dépense')
 

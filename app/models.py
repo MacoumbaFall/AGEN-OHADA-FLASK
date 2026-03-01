@@ -17,6 +17,9 @@ class User(UserMixin, db.Model):
     role: Mapped[str] = mapped_column(String(20), nullable=False) # 'NOTAIRE', 'CLERC', 'COMPTABLE', 'ADMIN', 'SECRETAIRE'
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
     last_login: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_failed_login: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     dossiers = relationship('Dossier', back_populates='responsable')
     ecritures = relationship('ComptaEcriture', back_populates='auteur')
@@ -26,6 +29,42 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_throttling_delay(self):
+        """Calculate exponential backoff delay in seconds: 2^(n-5)"""
+        if self.role != 'ADMIN' or self.failed_login_attempts < 5:
+            return 0
+        return 2 ** (self.failed_login_attempts - 5)
+
+    def can_attempt_login(self):
+        """Check if enough time has passed since last failed login (for Admins)"""
+        if self.role != 'ADMIN' or self.failed_login_attempts < 5:
+            return not self.is_locked
+        
+        if not self.last_failed_login:
+            return True
+            
+        import datetime as dt
+        delay = self.get_throttling_delay()
+        next_allowed = self.last_failed_login + dt.timedelta(seconds=delay)
+        return datetime.utcnow() >= next_allowed
+
+    def get_reset_token(self, expires_sec=1800):
+        from itsdangerous import URLSafeTimedSerializer
+        from flask import current_app
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+
+    @staticmethod
+    def verify_reset_token(token):
+        from itsdangerous import URLSafeTimedSerializer
+        from flask import current_app
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, max_age=1800)['user_id']
+        except:
+            return None
+        return db.session.get(User, user_id)
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -75,6 +114,21 @@ class Client(db.Model):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
 
     dossier_participations = relationship('DossierParty', back_populates='client')
+
+class SecurityLog(db.Model):
+    __tablename__ = 'security_logs'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False) # 'LOGIN_SUCCESS', 'LOGIN_FAILED', 'ACCOUNT_LOCKED', 'ACCOUNT_UNLOCKED'
+    username: Mapped[str] = mapped_column(String(50), nullable=False)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
+    user_agent: Mapped[Optional[str]] = mapped_column(String(255))
+    details: Mapped[Optional[str]] = mapped_column(Text)
+
+    def __repr__(self):
+        return f'<SecurityLog {self.event_type} - {self.username}>'
+    
+
 
 class Dossier(db.Model):
     __tablename__ = 'dossiers'

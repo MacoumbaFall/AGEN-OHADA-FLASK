@@ -85,6 +85,11 @@ def template_create():
                 if form.docx_file.data:
                     file = form.docx_file.data
                     filename = secure_filename(file.filename)
+                    # Validate extension (SEC-10)
+                    if not filename.lower().endswith('.docx'):
+                        flash('Seuls les fichiers .docx sont autorisés.', 'error')
+                        return render_template('actes/template_form.html', form=form, title='Nouveau Modèle')
+                    
                     # Add timestamp to avoid collisions
                     filename = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{filename}"
                     upload_folder = os.path.join(current_app.static_folder, 'templates_docx')
@@ -107,14 +112,14 @@ def template_create():
                 return redirect(url_for('actes.templates_index'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'Erreur base de données lors de la création: {str(e)}', 'error')
-                print(f"DATABASE ERROR in template_create: {str(e)}")
+                current_app.logger.error(f"DATABASE ERROR in template_create: {str(e)}")
+                flash('Une erreur est survenue lors de la création du modèle.', 'error')
         else:
             # Log form validation errors
             for field, errors in form.errors.items():
                 for error in errors:
+                    current_app.logger.warning(f"FORM ERROR in template_create: {field} - {error}")
                     flash(f"Erreur champ '{field}': {error}", 'error')
-                    print(f"FORM ERROR in template_create: {field} - {error}")
                     
     return render_template('actes/template_form.html', form=form, title='Nouveau Modèle')
 
@@ -140,14 +145,14 @@ def template_edit(id):
                 return redirect(url_for('actes.templates_index'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'Erreur base de données lors de la mise à jour: {str(e)}', 'error')
-                print(f"DATABASE ERROR in template_edit: {str(e)}")
+                current_app.logger.error(f"DATABASE ERROR in template_edit: {str(e)}")
+                flash('Une erreur est survenue lors de la mise à jour du modèle.', 'error')
         else:
             # Log form validation errors
             for field, errors in form.errors.items():
                 for error in errors:
+                    current_app.logger.warning(f"FORM ERROR in template_edit: {field} - {error}")
                     flash(f"Erreur champ '{field}': {error}", 'error')
-                    print(f"FORM ERROR in template_edit: {field} - {error}")
 
     return render_template('actes/template_form.html', form=form, title='Modifier Modèle', template=template)
 

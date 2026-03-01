@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from app import db
 from app.users import bp
 from app.users.forms import UserCreateForm, UserEditForm, ChangePasswordForm, AdminResetPasswordForm
-from app.models import User
+from app.models import User, SecurityLog
+from flask import request
 from app.decorators import admin_required
 from datetime import datetime
 
@@ -45,14 +46,16 @@ def create():
             from app.email import send_email
             from flask import current_app
             
-            mail_subject = "Bienvenue sur AGEN-OHADA !"
+            token = user.get_reset_token()
+            reset_url = url_for('auth.reset_password_token', token=token, _external=True)
+            mail_subject = "Bienvenue sur AGEN-OHADA - Activez votre compte"
             mail_body = f"""Bonjour {user.username},
             
 Votre compte a été créé avec succès par l'administrateur.
-Vos identifiants de connexion :
-- Nom d'utilisateur : {user.username}
-- Mot de passe : {form.password.data}
-- Rôle attribué : {user.role}
+Veuillez cliquer sur le lien ci-dessous pour définir votre mot de passe et activer votre compte :
+{reset_url}
+
+Ce lien expirera dans 30 minutes.
 
 Cordialement,
 L'équipe AGEN-OHADA.
@@ -194,11 +197,16 @@ def reset_password(id):
             from app.email import send_email
             from flask import current_app
             
+            token = user.get_reset_token()
+            reset_url = url_for('auth.reset_password_token', token=token, _external=True)
             mail_subject = "Réinitialisation de votre mot de passe"
             mail_body = f"""Bonjour {user.username},
             
 Votre mot de passe a été réinitialisé par un administrateur.
-Nouveau mot de passe : {form.new_password.data}
+Veuillez cliquer sur le lien ci-dessous pour choisir votre nouveau mot de passe :
+{reset_url}
+
+Ce lien expirera dans 30 minutes.
 
 Cordialement,
 L'équipe AGEN-OHADA.
@@ -219,6 +227,43 @@ L'équipe AGEN-OHADA.
                          title=f'Réinitialiser le mot de passe: {user.username}',
                          form=form,
                          user=user)
+
+
+@bp.route('/<int:id>/unlock', methods=['POST'])
+@login_required
+@admin_required
+def unlock(id):
+    """Unlock user account - Admin only"""
+    user = db.session.get(User, id)
+    if not user:
+        flash('Utilisateur introuvable.', 'error')
+        return redirect(url_for('users.index'))
+    
+    user.is_locked = False
+    user.failed_login_attempts = 0
+    
+    # Log the unlock event
+    from app.auth.routes import log_security_event
+    log_security_event('ACCOUNT_UNLOCKED', user.username, details=f"Unlocked by admin: {current_user.username}")
+    
+    db.session.commit()
+    
+    flash(f'Le compte de {user.username} a été déverrouillé.', 'success')
+    return redirect(url_for('users.view', id=user.id))
+
+@bp.route('/security-logs')
+@login_required
+@admin_required
+def security_logs():
+    """Display security logs - Admin only"""
+    page = request.args.get('page', 1, type=int)
+    logs_query = db.select(SecurityLog).order_by(SecurityLog.timestamp.desc())
+    logs_pagination = db.paginate(logs_query, page=page, per_page=50, error_out=False)
+    
+    return render_template('users/security_logs.html',
+                         title='Logs de Sécurité',
+                         logs=logs_pagination.items,
+                         pagination=logs_pagination)
 
 
 # ── Paramètres de l'étude ──────────────────────────────────────────────────

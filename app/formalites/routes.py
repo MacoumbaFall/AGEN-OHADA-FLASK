@@ -1,5 +1,6 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify
-from flask_login import login_required
+from flask import render_template, flash, redirect, url_for, request, current_app, send_file, jsonify, abort
+from flask_wtf.csrf import validate_csrf, ValidationError
+from flask_login import login_required, current_user
 from app import db
 from app.formalites import bp
 from app.formalites.forms import FormaliteForm, TypeFormaliteForm
@@ -223,6 +224,12 @@ def delete(id):
 @role_required('CLERC', 'SECRETAIRE', 'ADMIN', 'NOTAIRE')
 def update_status(id):
     """Mettre à jour le statut d'une formalité."""
+    # Manual CSRF Protection (SEC-07)
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except ValidationError:
+        abort(400, "Jeton CSRF invalide.")
+
     formalite = db.session.get(Formalite, id)
     if not formalite:
         return jsonify({'error': 'Formalité introuvable'}), 404

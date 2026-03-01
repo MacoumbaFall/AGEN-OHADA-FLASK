@@ -103,6 +103,7 @@
         {% set admin_links = [] %}
         {% if current_user.role == 'ADMIN' %}
         {% set _ = admin_links.append(('users.index', 'Utilisateurs')) %}
+        {% set _ = admin_links.append(('users.security_logs', '🛡 Logs de Sécurité')) %}
         {% set _ = admin_links.append(('users.parametres_etude', '⚙ Paramètres')) %}
         {% endif %}
 

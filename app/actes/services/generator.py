@@ -4,8 +4,9 @@ import os
 import shutil
 from pathlib import Path
 from docxtpl import DocxTemplate
-from jinja2 import Template as JinjaTemplate
+from jinja2.sandbox import SandboxedEnvironment
 import markdown2
+import bleach
 from flask import current_app, url_for
 from app import db
 from app.models import Acte
@@ -36,15 +37,19 @@ class ActGeneratorService:
 
         if template.is_docx:
             result['type'] = 'docx'
-            # Resolve path
+            # Resolve path and protect against traversal (SEC-09)
+            if not template.file_path or '..' in template.file_path or template.file_path.startswith('/') or template.file_path.startswith('\\'):
+                raise ValueError("Chemin de modèle invalide ou dangereux détecté.")
+            
             template_path = os.path.join(current_app.static_folder, 'templates_docx', template.file_path)
             
             if not os.path.exists(template_path):
                 raise FileNotFoundError(f"Template file '{template.file_path}' not found")
 
-            # Render DOCX
+            # Render DOCX with Sandboxed Environment (SEC-02)
+            sandbox_env = SandboxedEnvironment()
             doc = DocxTemplate(template_path)
-            doc.render(context)
+            doc.render(context, jinja_env=sandbox_env)
             
             output = BytesIO()
             doc.save(output)
@@ -93,11 +98,23 @@ class ActGeneratorService:
                 result['preview_url'] = url_for('static', filename=f'temp_previews/{temp_filename}')
 
         else:
-            # Markdown/HTML Logic
+            # Markdown/HTML Logic with Sandbox (SEC-02)
             result['type'] = 'html'
-            jinja_template = JinjaTemplate(template.contenu)
+            sandbox_env = SandboxedEnvironment()
+            jinja_template = sandbox_env.from_string(template.contenu)
             rendered_markdown = jinja_template.render(context)
+            
+            # Convert to HTML
             html_content = markdown2.markdown(rendered_markdown, extras=["tables", "fenced-code-blocks"])
+            
+            # Sanitize HTML (SEC-01)
+            allowed_tags = bleach.ALLOWED_TAGS | {
+                'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 
+                'span', 'div', 'hr', 'strong', 'em', 'u', 's', 'cite', 'code', 'pre', 'b', 'i'
+            }
+            allowed_attrs = {**bleach.ALLOWED_ATTRIBUTES, 'style': ['text-align', 'margin-left', 'width', 'font-family', 'font-size']}
+            html_content = bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attrs)
+            
             result['content'] = html_content
             
             if save_mode:

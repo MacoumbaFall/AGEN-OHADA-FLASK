@@ -54,7 +54,13 @@
                                 </div>
                             </div>
                             <div class="ml-4">
-                                <div class="font-medium text-gray-900">{{ user.username }}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium text-gray-900">{{ user.username }}</div>
+                                    {% if user.is_locked %}
+                                    <span
+                                        class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">Verrouillé</span>
+                                    {% endif %}
+                                </div>
                                 <div class="text-gray-500">Créé le {{ user.created_at.strftime('%d/%m/%Y') }}</div>
                             </div>
                         </div>

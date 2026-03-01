@@ -3,12 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 from app.config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
 mail = Mail()
+csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
 login.login_view = 'auth.login'
 login.login_message = 'Veuillez vous connecter pour accéder à cette page.'
 
@@ -36,6 +41,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     login.init_app(app)
     mail.init_app(app)
+    limiter.init_app(app)
+    csrf.init_app(app)
 
     # Register Blueprints
     from app.main import bp as main_bp

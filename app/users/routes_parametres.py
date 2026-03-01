@@ -1,10 +1,12 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, current_app, send_file, jsonify, abort
+from flask_wtf.csrf import validate_csrf, ValidationError
 from flask_login import login_required, current_user
 from app.users import bp
-from app.decorators import admin_required
+from app.decorators import admin_required, role_required
 from app.actes.services.parametres import ParametreService, DEFAULTS
-from app.models import ParametreEtude
+from app.models import ParametreEtude, Formalite, Template
 from app import db
+import os
 
 
 @bp.route('/parametres', methods=['GET', 'POST'])
@@ -14,6 +16,12 @@ def parametres_etude():
     """Page de configuration des paramètres de l'étude — ADMIN uniquement."""
 
     if request.method == 'POST':
+        # Manual CSRF Protection (SEC-07)
+        try:
+            validate_csrf(request.form.get('csrf_token'))
+        except ValidationError:
+            abort(400, "Jeton CSRF invalide.")
+        
         updated = 0
         errors = []
 

@@ -32,7 +32,7 @@ def archive_dossier(id):
     except ValueError as e:
         flash(str(e), 'warning')
     except Exception as e:
-        flash(f'Erreur technique lors de l\'archivage: {str(e)}', 'error')
-        print(f"ARCHIVE SERVICE ERROR: {e}")
+        current_app.logger.error(f"ARCHIVE SERVICE ERROR: {str(e)}")
+        flash('Une erreur technique est survenue lors de l\'archivage.', 'error')
         
     return redirect(url_for('dossiers.view', id=id))

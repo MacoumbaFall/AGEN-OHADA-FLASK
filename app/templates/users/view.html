@@ -17,6 +17,15 @@
                 class="inline-flex items-center rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500">
                 Réinitialiser mot de passe
             </a>
+            {% if user.is_locked %}
+            <form action="{{ url_for('users.unlock', id=user.id) }}" method="POST" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                    class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500">
+                    Déverrouiller le compte
+                </button>
+            </form>
+            {% endif %}
             <a href="{{ url_for('users.edit', id=user.id) }}"
                 class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
                 Modifier
@@ -69,6 +78,21 @@
                         {{ user.last_login.strftime('%d/%m/%Y à %H:%M') }}
                         {% else %}
                         <span class="text-gray-400">Jamais connecté</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">Statut du compte</dt>
+                    <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">
+                        {% if user.is_locked %}
+                        <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">
+                            VERROUILLÉ ({{ user.failed_login_attempts }} tentatives)
+                        </span>
+                        {% else %}
+                        <span
+                            class="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
+                            ACTIF
+                        </span>
                         {% endif %}
                     </dd>
                 </div>
