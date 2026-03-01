@@ -1,25 +1,25 @@
-flask
-flask-sqlalchemy
-flask-migrate
-flask-login
-flask-wtf
-wtforms-sqlalchemy
-python-dotenv
-email-validator
-# PDF Generation & Word Templates
-weasyprint
-xhtml2pdf
-docxtpl
-# Serveur de production (Linux/Render)
-gunicorn
-# Driver PostgreSQL
-psycopg2-binary
-# Serveur Windows (Optionnel)
-waitress
-markdown2
-openpyxl
-pandas
-
-Flask-Mail
-gunicorn
-psycopg2-binary
+flask
+flask-sqlalchemy
+flask-migrate
+flask-login
+flask-wtf
+wtforms-sqlalchemy
+python-dotenv
+email-validator
+# PDF Generation & Word Templates
+weasyprint
+xhtml2pdf
+docxtpl
+# Production Support
+gunicorn
+psycopg2-binary
+waitress
+# Utils
+markdown2
+openpyxl
+pandas
+num2words
+bleach
+# Flask Extensions
+Flask-Mail
+Flask-Limiter
