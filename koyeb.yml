@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
     # The command to start the Flask app in production
     # gunicorn is used for better performance.
-    command: flask db upgrade && gunicorn -b 0.0.0.0:${PORT:-8000} wsgi:app
+    command: chmod +x start.sh && ./start.sh
     # Expose the HTTP port (Koyeb will map it automatically)
     ports:
       - "${PORT:-8000}:8000"
@@ -17,6 +17,8 @@ services:
     env:
       - name: FLASK_ENV
         value: production
+      - name: FLASK_APP
+        value: wsgi.py
       - name: DATABASE_URL
         value: ${DATABASE_URL}
       - name: SECRET_KEY

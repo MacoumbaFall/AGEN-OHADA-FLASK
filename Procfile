@@ -1,1 +1,1 @@
-web: gunicorn wsgi:application
+web: chmod +x start.sh && ./start.sh

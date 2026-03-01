@@ -36,8 +36,11 @@ RUN pip install --upgrade pip setuptools wheel && \
 # Copy project files
 COPY . .
 
+# Ensure start.sh is executable
+RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 8000
 
-# Start Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "wsgi:application"]
+# Start via script
+CMD ["./start.sh"]
