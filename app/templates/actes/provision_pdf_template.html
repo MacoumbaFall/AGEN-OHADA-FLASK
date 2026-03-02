@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: a4;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: #4f46e5;
+            text-transform: uppercase;
+            margin: 0;
+            font-size: 22pt;
+        }
+
+        .meta {
+            margin-bottom: 25px;
+        }
+
+        .total-box {
+            background-color: #4f46e5;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: right;
+            margin-bottom: 30px;
+        }
+
+        .total-box p {
+            margin: 0;
+        }
+
+        .total-label {
+            text-transform: uppercase;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        .total-amount {
+            font-size: 24pt;
+            font-weight: 900;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #4f46e5;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 9pt;
+            color: #6b7280;
+            text-transform: uppercase;
+            padding: 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .amount {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-style: italic;
+            font-size: 8pt;
+            color: #6b7280;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+        }
+
+        .grid {
+            display: table;
+            width: 100%;
+        }
+
+        .col {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Note de Provision</h1>
+        <p>Expertise Notariale & Conseil</p>
+    </div>
+
+    <div class="meta">
+        <table style="border: none;">
+            <tr>
+                <td style="border: none; width: 60%;">
+                    <strong>Opération :</strong> {{ acte.contenu_json.type }}<br>
+                    <strong>Dossier :</strong> {{ acte.dossier.numero_dossier }} - {{ acte.dossier.intitule }}
+                </td>
+                <td style="border: none; text-align: right;">
+                    <strong>Date :</strong> {{ acte.created_at.strftime('%d/%m/%Y') }}<br>
+                    <strong>ID Acte :</strong> #{{ acte.id }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="total-box">
+        <p class="total-label">Total à Provisionner</p>
+        <p class="total-amount">{{ "{:,.0f}".format(acte.contenu_json.result.total_general).replace(',', ' ') }} FCFA
+        </p>
+    </div>
+
+    <div class="grid">
+        <div class="col">
+            <div class="section">
+                <div class="section-title">01. Émoluments (HT)</div>
+                <table>
+                    <tr>
+                        <td>Honoraires Notaire</td>
+                        <td class="amount">{{ "{:,.0f}".format(acte.contenu_json.result.honoraires_ht).replace(',', ' ')
+                            }}</td>
+                    </tr>
+                    <tr>
+                        <td>TVA (18%)</td>
+                        <td class="amount">{{ "{:,.0f}".format(acte.contenu_json.result.tva).replace(',', ' ') }}</td>
+                    </tr>
+                    <tr style="background-color: #f9fafb;">
+                        <td><strong>Total Honoraires TTC</strong></td>
+                        <td class="amount"><strong>{{ "{:,.0f}".format(acte.contenu_json.result.total_honoraires if
+                                acte.contenu_json.result.total_honoraires else (acte.contenu_json.result.honoraires_ht +
+                                acte.contenu_json.result.tva)).replace(',', ' ') }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="col">
+            <div class="section">
+                <div class="section-title">02. Droits et Taxes</div>
+                <table>
+                    {% if acte.contenu_json.result.enregistrement %}
+                    <tr>
+                        <td>Enregistrement</td>
+                        <td class="amount">{{ "{:,.0f}".format(acte.contenu_json.result.enregistrement).replace(',', '
+                            ') }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if acte.contenu_json.result.conservation_fonciere %}
+                    <tr>
+                        <td>Conservation Foncière</td>
+                        <td class="amount">{{
+                            "{:,.0f}".format(acte.contenu_json.result.conservation_fonciere).replace(',', ' ') }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if acte.contenu_json.result.greffe %}
+                    <tr>
+                        <td>Greffe / RCCM</td>
+                        <td class="amount">{{ "{:,.0f}".format(acte.contenu_json.result.greffe).replace(',', ' ') }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">03. Débours et Frais Accessoires</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Libellé</th>
+                    <th style="text-align: right;">Montant (FCFA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if acte.contenu_json.result.debours_details %}
+                {% for label, value in acte.contenu_json.result.debours_details.items() %}
+                <tr>
+                    <td>{{ label.replace('_', ' ') | capitalize }}</td>
+                    <td class="amount">{{ "{:,.0f}".format(value).replace(',', ' ') }}</td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+                {% if acte.contenu_json.result.frais_annexes %}
+                <tr>
+                    <td>Frais d'Annexes</td>
+                    <td class="amount">{{ "{:,.0f}".format(acte.contenu_json.result.frais_annexes).replace(',', ' ') }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% if acte.contenu_json.result.penalites %}
+                <tr>
+                    <td>Pénalités de retard</td>
+                    <td class="amount" style="color: red;">{{
+                        "{:,.0f}".format(acte.contenu_json.result.penalites).replace(',', ' ') }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        AVERTISSEMENT : Cette simulation est fournie à titre indicatif. Les montants définitifs peuvent varier selon les
+        justificatifs produits et les taux en vigueur au jour de la signature de l'acte.
+    </div>
+</body>
+
+</html>

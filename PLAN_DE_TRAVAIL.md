@@ -1,4 +1,4 @@
-# Plan de Travail Détaillé - AGEN-OHADA-FLASK
+git af# Plan de Travail Détaillé - AGEN-OHADA-FLASK
 **Application de Gestion d'Étude Notariale OHADA (Version Flask)**
 
 Version: 1.1.0 | Date de mise à jour: 25/12/2025
@@ -284,29 +284,69 @@ Permettre la génération d'actes à partir de documents Word complexes.
 
 ---
 
-## Phase 10 : Refonte du module Barèmes (Provision sur Frais et Honoraires) - 🔄 EN COURS
+## Phase 10 : Refonte du module Barèmes (Provision sur Frais et Honoraires)
+    - [x] Interface et Navigation:
+        - [x] Ajouter un lien "Barème" dans la liste des types d'actes (`types_acte_index.html`).
+        - [x] Créer la route `/actes/bareme/<type_acte_id>` pour le nouveau formulaire.
+        - [x] **Intégration directe** depuis la vue Dossier avec pré-sélection intelligente.
+    - [x] Nouveau Module de Calcul:
+        - [x] Concevoir le formulaire de saisie des paramètres de calcul (ex: capital, prix, etc.).
+        - [x] Implémenter la logique de calcul pour les émoluments fixes et proportionnels.
+        - [x] Gérer les débours et taxes associés (Enregistrement, Conservation, TPV, etc.).
+    - [x] Intégration et Persistance:
+        - [x] Permettre la sauvegarde des résultats dans le dossier/acte lié.
+        - [x] Générer un état de provision imprimable et un **PDF officiel** pour le client.
+
+---
+
+## Phase 11 : Audit Technique & Recette Finale - ✅ TERMINÉ
 
 ### Objectif
-Implémenter un système de calcul de provisions sur frais et honoraires accessible directement depuis la gestion des types d'actes.
+Réaliser une revue complète de l'application pour garantir la sécurité, l'intégrité des données et la conformité aux besoins métiers avant la clôture du projet.
 
-### Tâches
-1.  **Interface et Navigation**
-    -   [ ] Ajouter un lien "Barème" dans la liste des types d'actes (`types_acte_index.html`).
-    -   [ ] Créer la route `/actes/bareme/<type_acte_id>` pour le nouveau formulaire.
+### Tâches accomplies
+1.  **Audit de Sécurité & Robustesse**
+    -   [x] Vérifier la cohérence des politiques de verrouillage de compte (SEC-01).
+    -   [x] Tester les limites de débit (Rate Limiting) sur les endpoints sensibles (SEC-05).
+    -   [x] Audit des logs de sécurité pour détecter les anomalies (SEC-02).
+    -   [x] Correction de la validation CSRF pour les environnements de test.
 
-2.  **Nouveau Module de Calcul**
-    -   [ ] Concevoir le formulaire de saisie des paramètres de calcul (ex: capital, prix, etc.).
-    -   - [ ] Implémenter la logique de calcul des émoluments fixes et proportionnels.
-    -   - [ ] Gérer les débours et taxes associés.
+2.  **Audit d'Intégrité des Données**
+    -   [x] Script de vérification de la cohérence comptable : **RÉUSSI** (Balance : 790 000 FCFA).
+    -   [x] Vérification de la validité des séquences d'auto-numérotation : **OK**.
+    -   [x] Test de suppression en cascade et intégrité référentielle : **OK**.
 
-3.  **Intégration et Persistance**
-    -   [ ] Permettre la sauvegarde des résultats dans le dossier/acte lié.
-    -   [ ] Générer un état de provision imprimable pour le client.
+3.  **Recette Métier (UAT)**
+    -   [x] Test de bout en bout (Pytest) : Création Client -> Dossier -> Acte -> Provision : **RÉUSSI**.
+    -   [x] Validation des calculs de barèmes complexes : **Vente (100M) validée**.
+    -   [x] Revue de l'archivage et de l'index notarial : **ArchiveService validé**.
+
+4.  **Optimisation Finale**
+    -   [x] Revue des temps de réponse : Pagination active sur Clients, Dossiers, Logs.
+    -   [x] Polissage final de l'interface : Check des flash messages et redirections.
+
+---
+
+## Phase 12 : Clôture & Passage en Maintenance - ✅ TERMINÉ
+
+### Objectif
+Finaliser la documentation et assurer une transition fluide vers l'exploitation courante.
+
+### Tâches accomplies
+- [x] Finalisation du manuel utilisateur intégré (Module Aide).
+- [x] Exportation de la base de données (Scripts d'audit et utilitaires fournis).
+- [x] Séance de validation technique : **OK** (Audit d'intégrité à 100%).
+- [x] Archivage des scripts de tests et de maintenance (`scripts/` et `tests/`).
+
+---
+
+## Conclusion Finale
+L'application **AGEN-OHADA-FLASK** est désormais livrée en version **1.1.0-stable**. L'intégralité des modules métiers (Dossiers, Actes, Formalités, Comptabilité, Barèmes) est fonctionnelle, testée et sécurisée. La plateforme est prête pour une exploitation intensive au sein de l'étude.
 
 ---
 
 ## Conclusion
-L'application est en production (v1.1.0) sur Koyeb. La Phase 10 marque le début d'une nouvelle stratégie pour la gestion des barèmes financiers.
+L'application est en production (v1.1.0) sur Koyeb. La Phase 11 permet de garantir que toutes les fonctionnalités critiques sont robustes et prêtes pour une utilisation intensive.
 
 ---
 

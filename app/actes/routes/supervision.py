@@ -15,8 +15,9 @@ from datetime import datetime
 @login_required
 @role_required('NOTAIRE', 'CLERC', 'ADMIN')
 def types_acte_index():
+    dossier_id = request.args.get('dossier_id')
     types = db.session.scalars(db.select(TypeActe).order_by(TypeActe.nom)).all()
-    return render_template('actes/types_acte_index.html', types=types)
+    return render_template('actes/types_acte_index.html', types=types, dossier_id=dossier_id)
 
 @bp.route('/types/new', methods=['GET', 'POST'])
 @login_required

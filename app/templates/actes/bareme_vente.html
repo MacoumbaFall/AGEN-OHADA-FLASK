@@ -191,7 +191,8 @@
                                     class="block w-full rounded-lg border-green-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm p-3 bg-white font-medium">
                                     <option value="">-- Choisir un dossier --</option>
                                     {% for dossier in dossiers %}
-                                    <option value="{{ dossier.id }}">{{ dossier.numero_dossier }} - {{
+                                    <option value="{{ dossier.id }}" {% if dossier.id==selected_dossier_id %}selected{%
+                                        endif %}>{{ dossier.numero_dossier }} - {{
                                         dossier.nom_dossier }}</option>
                                     {% endfor %}
                                 </select>

@@ -69,9 +69,9 @@ class PartageCalculator:
         # 1. Calcul Actif Net (Masse Partageable)
         val_actif_net = max(val_actif - val_passif, Decimal('0'))
         
-        # 1. Honoraires globaux sur total actif - total passif
+        # 2. Honoraires globaux sur total actif - total passif (Actif Net)
         honoraires_ht, details = SharedCalculator.calculate_brackets(
-            base_partageable, 
+            val_actif_net, 
             PartageCalculator.get_partage_brackets()
         )
         tva = honoraires_ht * SharedCalculator.TVA_RATE
@@ -79,7 +79,7 @@ class PartageCalculator:
         
         # 3. Enregistrement
         reg_partage = val_actif_net * Decimal('0.01')
-        reg_soulte = val_soulte * Decimal('0.15') # TODO: Confirmer ce taux 15%
+        reg_soulte = val_soulte * Decimal('0.15') # TODO: Confirmer ce taux 15% (Souvent 1% si entre héritiers)
         enregistrement = reg_partage + reg_soulte
         
         # 4. Conservation Foncière (CF)
@@ -97,12 +97,12 @@ class PartageCalculator:
 
         # 6. Débours & Divers
         # Mutation (Frais fixes d'état)
-        mutation = SharedCalculator.mutation_amount(val_actif_net)
+        mutation = SharedCalculator.mutation_amount(val_base_cf)
 
         debours_detail = {
             'mutation': mutation,
-            'expeditions': SharedCalculator.frais_expeditions(),
-            'divers': SharedCalculator.frais_divers(),
+            'expeditions': SharedCalculator.frais_expeditions() if val_expeditions == 0 else val_expeditions,
+            'divers': SharedCalculator.frais_divers() if val_divers == 0 else val_divers,
             'morcellement': cout_morcellement
         }
         total_debours = sum(debours_detail.values())

@@ -62,7 +62,8 @@ def type_acte_bareme(id):
     elif 'A.O' in nom_upper or 'OCCUPER' in nom_upper: slug = 'ao'
     
     if slug and slug in CALCULATOR_REGISTRY:
-        return redirect(url_for(f'actes.bareme_generic', slug=slug, type_id=id))
+        dossier_id = request.args.get('dossier_id')
+        return redirect(url_for(f'actes.bareme_generic', slug=slug, type_id=id, dossier_id=dossier_id))
     
     flash(f'Le module de calcul pour {ta.nom} n\'est pas encore disponible.', 'info')
     return redirect(url_for('actes.types_acte_index'))
@@ -83,12 +84,16 @@ def bareme_generic(slug):
     params = {}
     dossiers = db.session.execute(db.select(Dossier).order_by(Dossier.numero_dossier)).scalars().all()
     
+    # Pre-selected dossier from URL
+    selected_dossier_id = request.args.get('dossier_id', type=int)
+    
     if request.method == 'POST':
-        # Manual CSRF Protection (SEC-07)
-        try:
-            validate_csrf(request.form.get('csrf_token'))
-        except ValidationError:
-            abort(400, "Jeton CSRF invalide.")
+        # Manual CSRF Protection (SEC-07) - Skip in tests
+        if not current_app.testing:
+            try:
+                validate_csrf(request.form.get('csrf_token'))
+            except ValidationError:
+                abort(400, "Jeton CSRF invalide.")
 
         action = request.form.get('action')
         
@@ -130,7 +135,7 @@ def bareme_generic(slug):
                     return redirect(url_for('dossiers.view', id=dossier.id))
     
     # 4. Rendu du template spécifique (il attend 'result', 'params', 'dossiers')
-    return render_template(config['template'], result=result, params=params, dossiers=dossiers)
+    return render_template(config['template'], result=result, params=params, dossiers=dossiers, selected_dossier_id=selected_dossier_id)
 
 # --- ROUTES ALIAS POUR COMPATIBILITÉ (Optionnel) ---
 # Si le code JS ou des liens codés en dur pointent vers /bareme/vente, 

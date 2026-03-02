@@ -128,40 +128,46 @@ def download_pdf(id):
         flash('Acte non trouvé.', 'error')
         return redirect(url_for('dossiers.index'))
 
-    if not acte.contenu_html:
+    if not acte.contenu_html and acte.type_acte != 'NOTE DE PROVISION':
         flash('La conversion PDF pour les fichiers Word n\'est pas encore disponible. Téléchargez le Word.', 'warning')
         return redirect(url_for('actes.view_act', id=id))
 
-    # Existing PDF generation for HTML/Markdown
     from xhtml2pdf import pisa
-    # Sanitize HTML before PDF generation (SEC-04)
-    allowed_tags = bleach.ALLOWED_TAGS | {
-        'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 
-        'span', 'div', 'hr', 'strong', 'em', 'u', 's', 'cite', 'code', 'pre', 'b', 'i'
-    }
-    allowed_attrs = {**bleach.ALLOWED_ATTRIBUTES, 'style': ['text-align', 'margin-left', 'width', 'font-family', 'font-size']}
-    sanitized_html = bleach.clean(acte.contenu_html, tags=allowed_tags, attributes=allowed_attrs)
+    
+    if acte.type_acte == 'NOTE DE PROVISION' and acte.contenu_json:
+        # Render specialized PDF template for provisions
+        html_content = render_template('actes/provision_pdf_template.html', acte=acte)
+    else:
+        # Existing PDF generation for HTML/Markdown
+        # Sanitize HTML before PDF generation (SEC-04)
+        allowed_tags = bleach.ALLOWED_TAGS | {
+            'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 
+            'span', 'div', 'hr', 'strong', 'em', 'u', 's', 'cite', 'code', 'pre', 'b', 'i'
+        }
+        allowed_attrs = {**bleach.ALLOWED_ATTRIBUTES, 'style': ['text-align', 'margin-left', 'width', 'font-family', 'font-size']}
+        sanitized_html = bleach.clean(acte.contenu_html, tags=allowed_tags, attributes=allowed_attrs)
 
-    html_content = f"""
-    <html>
-    <head>
-        <style>
-            @page {{ size: a4; margin: 2cm; }}
-            body {{ font-family: Helvetica, Arial, sans-serif; font-size: 12pt; }}
-        </style>
-    </head>
-    <body>
-        {sanitized_html}
-    </body>
-    </html>
-    """
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                @page {{ size: a4; margin: 2cm; }}
+                body {{ font-family: Helvetica, Arial, sans-serif; font-size: 12pt; }}
+            </style>
+        </head>
+        <body>
+            {sanitized_html}
+        </body>
+        </html>
+        """
+        
     pdf_buffer = BytesIO()
     pisa_status = pisa.CreatePDF(html_content, dest=pdf_buffer)
     if pisa_status.err:
         flash('Erreur lors de la génération du PDF.', 'error')
         return redirect(url_for('actes.view_act', id=id))
     pdf_buffer.seek(0)
-    return send_file(pdf_buffer, as_attachment=True, download_name=f"acte_{acte.id}.pdf", mimetype='application/pdf')
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"provision_{acte.id}.pdf" if acte.type_acte == 'NOTE DE PROVISION' else f"acte_{acte.id}.pdf", mimetype='application/pdf')
 
 # --- FINALISATION ET RÉVISION ---
 
