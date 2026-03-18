@@ -1,0 +1,58 @@
+Le système de signature électronique dans l'application AGEN-OHADA est conçu pour assurer l'intégrité des documents et formaliser le flux de travail notarial. Voici comment il fonctionne concrètement :
+
+1. Le Cycle de Vie de l'Acte
+Un acte passe par trois états principaux avant d'être considéré comme définitif :
+
+BROUILLON (Draft) : L'acte est en cours de rédaction ou de génération. Il peut être modifié par les clercs ou le notaire.
+FINALISÉ : Une fois la rédaction terminée, le notaire "finalise" l'acte. Cela verrouille le document pour empêcher toute modification ultérieure.
+SIGNÉ : C'est l'étape ultime où le notaire appose sa signature électronique.
+2. Fonctionnement Technique de la Signature
+Contrairement à une simple image de signature, le système utilise une approche de vérification d'intégrité :
+
+Calcul d'Empreinte (Hash) : Lors de la signature, le système génère un hash SHA-256 (une empreinte numérique unique) du contenu de l'acte. Si un seul caractère du document était modifié après la signature, cette empreinte ne correspondrait plus.
+Jeton de Signature : Le système génère une chaîne de caractères unique stockée en base de données, formatée comme suit : SIGNED-BY-[NomUtilisateur]-[Date]-[Début du Hash]
+Horodatage : La date et l'heure exactes de la signature sont enregistrées de manière immuable.
+3. Qui peut signer ?
+Le système applique une restriction stricte basée sur les rôles :
+
+Seul l'utilisateur ayant le rôle NOTAIRE possède les droits nécessaires pour finaliser et signer électroniquement un acte.
+Les clercs peuvent préparer les dossiers et générer les drafts, mais ils n'ont pas accès au bouton de signature.
+4. Signature Physique vs Électronique
+L'application gère les deux aspects :
+
+Signature Électronique : Elle sert de preuve interne et de verrouillage technique au sein du logiciel.
+Page de Signatures : Pour la signature manuscrite traditionnelle, le système génère une page spécifique (formatée pour l'impression) qui liste toutes les parties au dossier (vendeur, acheteur, etc.) avec des espaces dédiés pour leurs signatures physiques et le sceau de l'étude.
+5. Archivage
+Une fois l'acte signé, il peut être archivé. Lors de l'archivage, le document est déplacé vers un répertoire sécurisé, reçoit un numéro de répertoire officiel, et est horodaté pour le registre notarial.
+
+NOTE
+
+La signature électronique ici est une signature de type "logique" interne, garantissant que l'acte présenté dans le système est bien celui qui a été validé par le notaire à un instant T.
+
+L'utilisateur reconnaît qu'un document est signé électroniquement principalement à travers trois éléments visuels et fonctionnels dans l'interface de l'application :
+
+1. Le Badge de Statut Visuel
+C'est l'indicateur le plus évident. Dans la page de consultation de l'acte (
+
+view.html
+), un badge de couleur s'affiche en haut de l'écran :
+
+Couleur Verte : Un fond vert avec le texte "SIGNE" confirme que la procédure de signature électronique a été complétée avec succès.
+Comparaison : Il se distingue des statuts "BROUILLON" (jaune) ou "FINALISÉ" (bleu).
+2. Le Verrouillage des Actions
+Le passage au statut "SIGNÉ" modifie dynamiquement les options disponibles pour l'utilisateur :
+
+Disparition du bouton de signature : Le bouton permettant de déclencher la signature électronique (réservé au notaire) n'est plus visible.
+Immuabilité : Les boutons de modification ("Modifier" ou "Éditer le brouillon") disparaissent ou deviennent inactifs. Cela indique visuellement que le contenu est désormais protégé contre toute altération.
+3. Les Preuves Numériques (Audit)
+Bien que l'utilisateur standard ne voie que le badge, le système génère en arrière-plan une preuve technique stockée dans le champ signature_electronique de l'acte, qui comprend :
+
+L'identité : La mention du notaire signataire (ex: SIGNED-BY-[username]).
+L'horodatage : La date et l'heure exactes (ISO format).
+L'empreinte (Hash) : Un code unique de 16 caractères (extrait du hash SHA-256) qui garantit que le contenu n'a pas été modifié depuis la signature.
+4. La Page de Signatures Physique
+Pour compléter la signature électronique, l'utilisateur a accès à un bouton "Page Signatures". Celle-ci génère un document prêt pour l'impression qui rappelle le statut de l'acte et fournit les emplacements pour les signatures manuscrites et le sceau, faisant le pont entre le numérique et le papier.
+
+TIP
+
+Si vous êtes administrateur ou notaire, vous pouvez vérifier la validité de la signature en consultant les détails de l'acte : toute tentative de modification d'un document signé serait immédiatement bloquée par le système.

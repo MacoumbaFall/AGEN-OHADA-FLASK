@@ -53,11 +53,29 @@ Le cœur de métier. Un dossier regroupe :
 ---
 
 ## 4. Rédaction et Signature des Actes
-Ce module permet la génération automatisée et la validation des documents sécurisés :
+Le processus de gestion d'un acte suit un flux de travail rigoureux garantissant la sécurité juridique des documents.
 
-1.  **Génération** : Le clerc génère un document à partir d'un modèle Word. Le système remplit automatiquement les balises comme `{{ client.nom }}`.
-2.  **Validation** : Le notaire retrouve le document dans "Signer les actes". Il peut télécharger le fichier, le modifier, puis le valider.
-3.  **Signature** : Une fois validé, le document est "signé" cryptographiquement (empreinte numérique SHA-256) pour garantir son authenticité.
+### 🔄 Cycle de vie de l'acte
+1.  **Brouillon (Draft)** : L'acte est généré par le clerc ou le notaire. Il peut être modifié librement via l'éditeur ou en remplaçant le fichier Word.
+2.  **Finalisation** : Le Notaire vérifie l'acte et le "Finalise". Cette action verrouille le document : il ne peut plus être modifié, garantissant que la version signée sera identique à la version révisée.
+3.  **Signature (Électronique)** : Le Notaire appose sa validation numérique finale. L'acte passe au statut "SIGNÉ" et devient immuable.
+
+### 🖊️ Les deux modes de signature
+L'application AGEN-OHADA gère la dualité entre la validation numérique et le support papier officiel.
+
+#### A. Signature Électronique (Sécurité Numérique)
+Elle est effectuée par le Notaire dans le menu "Signer les actes" ou directement depuis la vue d'un acte finalisé :
+*   **Intégrité** : Le système calcule une empreinte numérique unique (Hash SHA-256) basée sur le contenu de l'acte. Si le contenu changeait, la signature deviendrait invalide.
+*   **Authentification** : Un jeton de signature infalsifiable est stocké, incluant le nom d'utilisateur du notaire et l'horodatage précis.
+*   **Reconnaissance** : Un acte signé est identifiable par son badge **vert "SIGNE"**. Toutes les fonctions d'édition sont alors désactivées.
+
+#### B. Signature Manuelle (Support Physique)
+Pour la formalisation physique avec les clients :
+*   **Page de Signatures** : Cliquez sur le bouton "Page Signatures" pour générer une page optimisée pour l'impression.
+*   **Formalisme** : Cette page liste automatiquement tous les intervenants (Vendeur, Acheteur, Bailleur, etc.) avec des zones dédiées pour :
+    *   Les signatures manuscrites des parties.
+    *   Le sceau et la signature physique du Notaire.
+*   **Archivage** : Une fois signée physiquement, cette page est jointe à l'original (la minute) pour l'archivage définitif.
 
 ---
 
