@@ -54,6 +54,7 @@
                                         class="text-green-600 hover:text-green-900 mr-4">Barème</a>
                                     <form action="{{ url_for('actes.type_acte_delete', id=type.id) }}" method="POST"
                                         class="inline-block" onsubmit="return confirm('Supprimer ce type ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>
                                     </form>
                                 </td>

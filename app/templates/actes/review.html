@@ -58,6 +58,7 @@
                             class="text-gray-600 hover:text-gray-900">Consulter</a>
                         <form action="{{ url_for('actes.sign_act', id=acte.id) }}" method="POST"
                             onsubmit="return confirm('Signer cet acte ? Il sera prêt pour l\'archivage.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit"
                                 class="text-green-600 hover:text-green-900 font-semibold">Signer</button>
                         </form>

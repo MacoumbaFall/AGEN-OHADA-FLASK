@@ -39,6 +39,7 @@
     <!-- Main Form -->
     <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl md:col-span-2">
         <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {{ form.hidden_tag() }}
 
             <div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">

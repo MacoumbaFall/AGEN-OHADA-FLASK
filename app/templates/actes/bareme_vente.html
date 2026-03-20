@@ -30,6 +30,7 @@
                     Données de la vente
                 </h2>
                 <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="calculate">
                     <div>
                         <label for="prix"
@@ -177,6 +178,7 @@
 
                         <form method="POST"
                             class="p-6 rounded-2xl border-2 border-dashed border-green-200 bg-green-50 space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="save">
                             <input type="hidden" name="prix" value="{{ params.prix }}">
                             <input type="hidden" name="taux_enregistrement" value="{{ params.taux_enregistrement }}">

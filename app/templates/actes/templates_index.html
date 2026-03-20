@@ -48,6 +48,7 @@
                         class="text-indigo-600 hover:text-indigo-900">Modifier</a>
                     <form action="{{ url_for('actes.template_delete', id=template.id) }}" method="post"
                         class="inline ml-2" onsubmit="return confirm('Êtes-vous sûr ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>
                     </form>
                 </td>

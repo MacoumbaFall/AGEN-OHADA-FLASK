@@ -12,6 +12,7 @@
 <div class="bg-white shadow sm:rounded-lg">
     <div class="px-4 py-5 sm:p-6 text-gray-900">
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {{ form.hidden_tag() }}
 
             {% if acte.contenu_html %}

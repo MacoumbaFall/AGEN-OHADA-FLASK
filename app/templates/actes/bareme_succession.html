@@ -30,6 +30,7 @@
                     Données du dossier
                 </h2>
                 <form method="POST" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="calculate">
                     <div>
                         <label for="valeur_immeuble"
@@ -286,6 +287,7 @@
 
                         <form method="POST"
                             class="p-6 rounded-2xl border-2 border-dashed border-green-200 bg-green-50 space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="save">
                             <input type="hidden" name="valeur_immeuble" value="{{ params.valeur_immeuble }}">
                             <input type="hidden" name="reste_actif" value="{{ params.reste_actif }}">

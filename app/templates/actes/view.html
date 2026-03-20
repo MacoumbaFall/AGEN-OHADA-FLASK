@@ -25,6 +25,7 @@
         </a>
         <form action="{{ url_for('actes.finalize_act', id=acte.id) }}" method="POST"
             onsubmit="return confirm('Voulez-vous finaliser cet acte ? Il sera verrouillé.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit"
                 class="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
                 Finaliser
@@ -33,6 +34,7 @@
         {% elif acte.statut == 'FINALISE' %}
         <form action="{{ url_for('actes.sign_act', id=acte.id) }}" method="POST"
             onsubmit="return confirm('Signer cet acte électroniquement ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit"
                 class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
                 Signer l'acte
