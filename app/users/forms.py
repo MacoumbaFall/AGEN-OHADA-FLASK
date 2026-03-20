@@ -1,7 +1,40 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, SubmitField, BooleanField, SelectMultipleField, widgets
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Optional
-from app.models import User
+from app.models import User, Profile
+
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
+
+class ProfileForm(FlaskForm):
+    code = StringField('Code Profil', validators=[
+        DataRequired(message='Le code est requis'),
+        Length(min=3, max=50)
+    ])
+    nom = StringField('Nom Profil', validators=[
+        DataRequired(message='Le nom est requis'),
+        Length(min=3, max=100)
+    ])
+    description = StringField('Description')
+    permissions = MultiCheckboxField('Fonctionnalités', coerce=int)
+    submit = SubmitField('Enregistrer')
+
+    def __init__(self, original_code=None, *args, **kwargs):
+        super(ProfileForm, self).__init__(*args, **kwargs)
+        self.original_code = original_code
+        from app import db
+        from app.models import Permission
+        perms = db.session.scalars(db.select(Permission).order_by(Permission.nom)).all()
+        self.permissions.choices = [(p.id, f"{p.nom} - {p.description or ''}") for p in perms]
+
+    def validate_code(self, code):
+        if self.original_code is None or code.data != self.original_code:
+            from app import db
+            profile = db.session.scalar(db.select(Profile).where(Profile.code == code.data))
+            if profile:
+                raise ValidationError('Ce code de profil existe déjà.')
+
 
 class UserCreateForm(FlaskForm):
     username = StringField('Nom d\'utilisateur', validators=[
@@ -20,14 +53,24 @@ class UserCreateForm(FlaskForm):
         DataRequired(message='Veuillez confirmer le mot de passe'),
         EqualTo('password', message='Les mots de passe ne correspondent pas')
     ])
-    role = SelectField('Rôle', choices=[
-        ('NOTAIRE', 'Notaire'),
-        ('CLERC', 'Clerc'),
-        ('COMPTABLE', 'Comptable'),
-        ('SECRETAIRE', 'Secrétaire'),
-        ('ADMIN', 'Administrateur')
-    ], validators=[DataRequired(message='Le rôle est requis')])
+    role = SelectField('Profil', validators=[DataRequired(message='Le rôle est requis')])
     submit = SubmitField('Créer l\'utilisateur')
+
+    def __init__(self, *args, **kwargs):
+        super(UserCreateForm, self).__init__(*args, **kwargs)
+        from app import db
+        from app.models import Profile
+        profiles = db.session.scalars(db.select(Profile).order_by(Profile.nom)).all()
+        if profiles:
+            self.role.choices = [(p.code, p.nom) for p in profiles]
+        else:
+            self.role.choices = [
+                ('NOTAIRE', 'Notaire'),
+                ('CLERC', 'Clerc'),
+                ('COMPTABLE', 'Comptable'),
+                ('SECRETAIRE', 'Secrétaire'),
+                ('ADMIN', 'Administrateur')
+            ]
 
     def validate_username(self, username):
         from app import db
@@ -51,19 +94,26 @@ class UserEditForm(FlaskForm):
         DataRequired(message='L\'email est requis'),
         Email(message='Email invalide')
     ])
-    role = SelectField('Rôle', choices=[
-        ('NOTAIRE', 'Notaire'),
-        ('CLERC', 'Clerc'),
-        ('COMPTABLE', 'Comptable'),
-        ('SECRETAIRE', 'Secrétaire'),
-        ('ADMIN', 'Administrateur')
-    ], validators=[DataRequired(message='Le rôle est requis')])
+    role = SelectField('Profil', validators=[DataRequired(message='Le rôle est requis')])
     submit = SubmitField('Mettre à jour')
 
     def __init__(self, original_username, original_email, *args, **kwargs):
         super(UserEditForm, self).__init__(*args, **kwargs)
         self.original_username = original_username
         self.original_email = original_email
+        from app import db
+        from app.models import Profile
+        profiles = db.session.scalars(db.select(Profile).order_by(Profile.nom)).all()
+        if profiles:
+            self.role.choices = [(p.code, p.nom) for p in profiles]
+        else:
+            self.role.choices = [
+                ('NOTAIRE', 'Notaire'),
+                ('CLERC', 'Clerc'),
+                ('COMPTABLE', 'Comptable'),
+                ('SECRETAIRE', 'Secrétaire'),
+                ('ADMIN', 'Administrateur')
+            ]
 
     def validate_username(self, username):
         if username.data != self.original_username:

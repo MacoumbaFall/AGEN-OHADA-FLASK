@@ -257,13 +257,50 @@ def unlock(id):
 def security_logs():
     """Display security logs - Admin only"""
     page = request.args.get('page', 1, type=int)
-    logs_query = db.select(SecurityLog).order_by(SecurityLog.timestamp.desc())
+    
+    # Filters
+    username_filter = request.args.get('username', '')
+    action_filter = request.args.get('action', '')
+    date_start = request.args.get('date_start', '')
+    date_end = request.args.get('date_end', '')
+    
+    logs_query = db.select(SecurityLog)
+    
+    if username_filter:
+        logs_query = logs_query.where(SecurityLog.username.ilike(f'%{username_filter}%'))
+    if action_filter:
+        logs_query = logs_query.where(SecurityLog.event_type == action_filter)
+    if date_start:
+        try:
+            d_start = datetime.strptime(date_start, '%Y-%m-%d')
+            logs_query = logs_query.where(SecurityLog.timestamp >= d_start)
+        except ValueError:
+            pass
+    if date_end:
+        try:
+            # End of day
+            d_end = datetime.strptime(date_end, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            logs_query = logs_query.where(SecurityLog.timestamp <= d_end)
+        except ValueError:
+            pass
+            
+    logs_query = logs_query.order_by(SecurityLog.timestamp.desc())
     logs_pagination = db.paginate(logs_query, page=page, per_page=50, error_out=False)
     
+    # Get distinct event types for the filter dropdown
+    event_types = db.session.scalars(db.select(SecurityLog.event_type).distinct()).all()
+    
     return render_template('users/security_logs.html',
-                         title='Logs de Sécurité',
+                         title='Logs d\'Audit et de Sécurité',
                          logs=logs_pagination.items,
-                         pagination=logs_pagination)
+                         pagination=logs_pagination,
+                         event_types=event_types,
+                         filters={
+                             'username': username_filter,
+                             'action': action_filter,
+                             'date_start': date_start,
+                             'date_end': date_end
+                         })
 
 
 # ── Paramètres de l'étude ──────────────────────────────────────────────────

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                {{ title }}
+            </h2>
+            {% if is_edit and profile and profile.is_predefined %}
+            <p class="mt-1 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-1 inline-block">
+                ⚠️ Profil prédéfini : seul le nom, la description et les fonctionnalités peuvent être modifiés. Le code est verrouillé.
+            </p>
+            {% endif %}
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <a href="{{ url_for('users.profiles_index') }}"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                ← Retour aux profils
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="space-y-6">
+
+                    <!-- Code -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label for="code" class="block text-sm font-medium leading-6 text-gray-900">
+                                {{ form.code.label.text }}
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-2">
+                                {% if is_edit and profile and profile.is_predefined %}
+                                <!-- Lock code for predefined profiles -->
+                                <input type="text" value="{{ profile.code }}" disabled
+                                    class="block w-full rounded-md border-0 py-1.5 bg-gray-100 text-gray-500 shadow-sm ring-1 ring-inset ring-gray-200 sm:text-sm sm:leading-6 cursor-not-allowed font-mono">
+                                <input type="hidden" name="code" value="{{ profile.code }}">
+                                {% else %}
+                                {{ form.code(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 font-mono uppercase", placeholder="EX: JURISTE") }}
+                                {% endif %}
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Identifiant unique du profil (lettres majuscules, sans espaces).</p>
+                            {% if form.code.errors %}
+                            {% for error in form.code.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="nom" class="block text-sm font-medium leading-6 text-gray-900">
+                                {{ form.nom.label.text }}
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <div class="mt-2">
+                                {{ form.nom(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", placeholder="Ex: Juriste Senior") }}
+                            </div>
+                            {% if form.nom.errors %}
+                            {% for error in form.nom.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium leading-6 text-gray-900">
+                            {{ form.description.label.text }}
+                        </label>
+                        <div class="mt-2">
+                            {{ form.description(class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6", placeholder="Description optionnelle du profil...") }}
+                        </div>
+                    </div>
+
+                    <!-- Permissions grouped by category -->
+                    <div>
+                        <label class="block text-sm font-medium leading-6 text-gray-900 mb-1">
+                            {{ form.permissions.label.text }}
+                        </label>
+                        <p class="text-xs text-gray-500 mb-4">
+                            Sélectionnez les fonctionnalités auxquelles ce profil aura accès.
+                            {% if is_edit and profile and profile.code == 'ADMIN' %}
+                            <span class="text-amber-600 font-medium"> Note : L'administrateur a automatiquement accès à toutes les fonctionnalités, quelle que soit la sélection.</span>
+                            {% endif %}
+                        </p>
+
+                        {% if form.permissions.errors %}
+                        {% for error in form.permissions.errors %}
+                        <p class="mb-2 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Group permissions by category based on code prefix -->
+                        {% set ns = namespace(groups={}) %}
+                        {% set perm_choices = form.permissions.choices %}
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {% set categories = [
+                                ('ADMIN', '🛡️ Administration', 'bg-purple-50 border-purple-200'),
+                                ('MANAGE_CLIENTS', '👥 Clients', 'bg-blue-50 border-blue-200'),
+                                ('MANAGE_DOSSIERS', '📁 Dossiers', 'bg-green-50 border-green-200'),
+                                ('MANAGE_ACTES', '📝 Actes', 'bg-yellow-50 border-yellow-200'),
+                                ('SIGNER_ACTES', '✍️ Signature d\'Actes', 'bg-orange-50 border-orange-200'),
+                                ('MANAGE_COMPTA', '💰 Comptabilité', 'bg-teal-50 border-teal-200'),
+                                ('MANAGE_FORMALITES', '📋 Formalités', 'bg-indigo-50 border-indigo-200'),
+                                ('VIEW_', '👁️ Consultation', 'bg-gray-50 border-gray-200')
+                            ] %}
+
+                            {% for cat_prefix, cat_label, cat_style in categories %}
+                            {% set cat_perms = [] %}
+                            {% for choice_id, choice_label in perm_choices %}
+                                {% set perm_code = choice_label.split(' - ')[0] if ' - ' in choice_label else choice_label %}
+                            {% endfor %}
+                            {% endfor %}
+
+                            <!-- Simple flat list with checkboxes, grouped visually -->
+                            {% set all_perms = form.permissions.choices %}
+                        </div>
+
+                        <!-- Flat permission list with select all -->
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-2 flex items-center justify-between border-b border-gray-200">
+                                <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Toutes les fonctionnalités</span>
+                                <label class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="checkbox" id="select-all-perms" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    Tout sélectionner
+                                </label>
+                            </div>
+                            <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                                {% for subfield in form.permissions %}
+                                <label class="flex items-start gap-3 px-4 py-3 hover:bg-indigo-50 cursor-pointer transition-colors" for="{{ subfield.id }}">
+                                    {{ subfield(class="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 perm-checkbox") }}
+                                    <span class="text-sm text-gray-700">{{ subfield.label.text }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="mt-6 flex items-center justify-end gap-x-6 border-t border-gray-200 pt-4">
+                    <a href="{{ url_for('users.profiles_index') }}" class="text-sm font-semibold leading-6 text-gray-900">
+                        Annuler
+                    </a>
+                    {{ form.submit(class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-uppercase the code field
+    const codeField = document.getElementById('code');
+    if (codeField && !codeField.disabled) {
+        codeField.addEventListener('input', function() {
+            const pos = this.selectionStart;
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+            this.setSelectionRange(pos, pos);
+        });
+    }
+
+    // Select all checkbox
+    const selectAll = document.getElementById('select-all-perms');
+    const checkboxes = document.querySelectorAll('.perm-checkbox');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        // Update select-all state when individual checkboxes change
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                selectAll.checked = Array.from(checkboxes).every(c => c.checked);
+                selectAll.indeterminate = !selectAll.checked && Array.from(checkboxes).some(c => c.checked);
+            });
+        });
+
+        // Set initial select-all state
+        const checkedCount = Array.from(checkboxes).filter(c => c.checked).length;
+        selectAll.checked = checkedCount === checkboxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    }
+</script>
+{% endblock %}
+{% endblock %}

@@ -7,6 +7,32 @@ from sqlalchemy import String, Integer, ForeignKey, Text, Date, Boolean, Numeric
 # from sqlalchemy.dialects.postgresql import JSONB
 from app import db, login
 
+class Permission(db.Model):
+    __tablename__ = 'permissions'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    nom: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+
+class ProfilePermission(db.Model):
+    __tablename__ = 'profile_permissions'
+    profile_id: Mapped[int] = mapped_column(ForeignKey('profiles.id', ondelete='CASCADE'), primary_key=True)
+    permission_id: Mapped[int] = mapped_column(ForeignKey('permissions.id', ondelete='CASCADE'), primary_key=True)
+
+class Profile(db.Model):
+    __tablename__ = 'profiles'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False) # e.g. NOTAIRE, CLERC, ADMIN ou nouveau code
+    nom: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    is_predefined: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    permissions = relationship('Permission', secondary='profile_permissions', backref='profiles')
+    users = relationship('User', back_populates='profile_relation', primaryjoin="Profile.code == foreign(User.role)")
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -23,6 +49,22 @@ class User(UserMixin, db.Model):
 
     dossiers = relationship('Dossier', back_populates='responsable')
     ecritures = relationship('ComptaEcriture', back_populates='auteur')
+    profile_relation = relationship('Profile', back_populates='users', primaryjoin="User.role == Profile.code", foreign_keys=[role])
+
+    @property
+    def user_permissions(self):
+        if hasattr(self, '_user_permissions'):
+            return self._user_permissions
+        if self.profile_relation:
+            self._user_permissions = [p.code for p in self.profile_relation.permissions]
+        else:
+            self._user_permissions = []
+        return self._user_permissions
+
+    def has_permission(self, perm_code):
+        if self.role == 'ADMIN':
+            return True
+        return perm_code in self.user_permissions
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -124,6 +166,11 @@ class SecurityLog(db.Model):
     ip_address: Mapped[Optional[str]] = mapped_column(String(45))
     user_agent: Mapped[Optional[str]] = mapped_column(String(255))
     details: Mapped[Optional[str]] = mapped_column(Text)
+    
+    # Audit trail (Actions utilisateurs, entités et champs modifiés)
+    target_resource: Mapped[Optional[str]] = mapped_column(String(100)) # e.g. 'clients', 'dossiers'
+    target_id: Mapped[Optional[str]] = mapped_column(String(50)) # The ID of the modified entity
+    changes: Mapped[Optional[dict]] = mapped_column(JSON) # JSON object showing old vs new values
 
     def __repr__(self):
         return f'<SecurityLog {self.event_type} - {self.username}>'

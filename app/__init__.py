@@ -43,6 +43,10 @@ def create_app(config_class=Config):
     mail.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
+    
+    # Audit trail
+    from app.audit import register_audit_events
+    register_audit_events(db)
 
     # Register Blueprints
     from app.main import bp as main_bp

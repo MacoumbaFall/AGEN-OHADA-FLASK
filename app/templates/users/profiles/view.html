@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight flex items-center gap-3">
+                {{ profile.nom }}
+                {% if profile.is_predefined %}
+                <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Prédéfini</span>
+                {% else %}
+                <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">Personnalisé</span>
+                {% endif %}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 font-mono">
+                Code : {{ profile.code }}
+            </p>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3 md:ml-4 md:mt-0">
+            <a href="{{ url_for('users.profiles_edit', id=profile.id) }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                Modifier le profil
+            </a>
+            <a href="{{ url_for('users.profiles_index') }}"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Informations du profil -->
+        <div class="md:col-span-1 space-y-6">
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Détails du profil</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6 space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Nom</h4>
+                        <p class="mt-1 text-sm text-gray-900">{{ profile.nom }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Code interne</h4>
+                        <p class="mt-1 text-sm font-mono text-gray-900 bg-gray-100 inline-block px-1.5 py-0.5 rounded">{{ profile.code }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Description</h4>
+                        <p class="mt-1 text-sm text-gray-900">{{ profile.description or 'Aucune description' }}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500">Type</h4>
+                        <p class="mt-1 text-sm text-gray-900">
+                            {% if profile.is_predefined %}
+                            Profil standard du système (le code ne peut pas être modifié ou supprimé).
+                            {% else %}
+                            Profil créé sur mesure.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard stats / Usage -->
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Utilisation</h3>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-500">Utilisateurs assignés</span>
+                        <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800">
+                            {{ users_count }}
+                        </span>
+                    </div>
+                    
+                    {% if users_count > 0 %}
+                    <div class="mt-6">
+                        <a href="{{ url_for('users.index') }}?role={{ profile.code }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                            Voir les utilisateurs &rarr;
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Delete section -->
+            {% if not profile.is_predefined %}
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg border-2 border-red-100">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-sm font-semibold text-red-800">Zone de danger</h3>
+                    <p class="mt-2 text-sm text-gray-500">
+                        La suppression d'un profil personnalisé est définitive.
+                    </p>
+                    
+                    {% if users_count > 0 %}
+                    <p class="mt-2 text-sm text-red-600 font-medium">
+                        Vous devez réassigner les {{ users_count }} utilisateur(s) actuel(s) à un autre profil avant de pouvoir supprimer celui-ci.
+                    </p>
+                    {% else %}
+                    <form action="{{ url_for('users.profiles_delete', id=profile.id) }}" method="POST" class="mt-4"
+                        onsubmit="return confirm('Êtes-vous absolument sûr de vouloir supprimer ce profil ?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500">
+                            Supprimer le profil
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Permissions du profil -->
+        <div class="md:col-span-2 space-y-6">
+            <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-base font-semibold leading-6 text-gray-900">Fonctionnalités accordées</h3>
+                    <span class="inline-flex items-center rounded-full bg-indigo-100 px-3 py-0.5 text-sm font-medium text-indigo-800">
+                        {{ profile.permissions|length }}
+                    </span>
+                </div>
+                
+                <div class="px-4 py-5 sm:p-6">
+                    {% if profile.code == 'ADMIN' %}
+                    <div class="rounded-md bg-purple-50 p-4 mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <span class="text-xl">🛡️</span>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-purple-800">Accès Administrateur</h3>
+                                <div class="mt-2 text-sm text-purple-700">
+                                    <p>Ce profil a intrinsèquement un accès total au système, quelles que soient les fonctionnalités listées ci-dessous.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.permissions %}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for perm in profile.permissions %}
+                            <div class="relative flex items-start p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex-shrink-0 mt-0.5">
+                                    <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <h4 class="text-sm font-medium text-gray-900">{{ perm.nom }}</h4>
+                                    {% if perm.description %}
+                                    <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6 text-gray-500">
+                            <p class="inline-flex mb-2">
+                                <svg class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </p>
+                            <p class="text-sm">Aucune fonctionnalité spécifique n'est assignée à ce profil.</p>
+                            <p class="text-xs mt-1 text-gray-400">Les utilisateurs de ce profil auront un accès très restreint.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

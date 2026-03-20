@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                🔐 Gestion des Profils
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Gérez les profils prédéfinis et créez des profils personnalisés avec des fonctionnalités spécifiques.
+            </p>
+        </div>
+        <div class="mt-4 flex md:ml-4 md:mt-0">
+            <a href="{{ url_for('users.profiles_create') }}"
+                class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                </svg>
+                Nouveau Profil
+            </a>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="flex items-center gap-4 text-sm text-gray-500">
+        <span class="inline-flex items-center gap-1.5">
+            <span class="inline-flex h-3 w-3 rounded-full bg-blue-500"></span>
+            Profil prédéfini (protégé)
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+            <span class="inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
+            Profil personnalisé
+        </span>
+    </div>
+
+    <!-- Predefined Profiles -->
+    {% set predefined = profiles | selectattr('is_predefined') | list %}
+    {% set custom = profiles | rejectattr('is_predefined') | list %}
+
+    {% if predefined %}
+    <div>
+        <h3 class="text-base font-semibold text-gray-700 mb-3">Profils Prédéfinis</h3>
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg border-l-4 border-blue-400">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-3 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sm:pl-6">Profil</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fonctionnalités</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilisateurs</th>
+                        <th class="relative py-3 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for profile in predefined %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-4 pl-4 pr-3 sm:pl-6">
+                            <div class="flex items-center gap-2">
+                                <div class="font-medium text-gray-900">{{ profile.nom }}</div>
+                                <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                    Prédéfini
+                                </span>
+                            </div>
+                            {% if profile.description %}
+                            <div class="text-xs text-gray-500 mt-0.5">{{ profile.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm">
+                            <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">{{ profile.code }}</code>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            {% if profile.permissions %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for perm in profile.permissions[:3] %}
+                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ perm.nom }}</span>
+                                {% endfor %}
+                                {% if profile.permissions|length > 3 %}
+                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500">+{{ profile.permissions|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-gray-400 italic">
+                                {% if profile.code == 'ADMIN' %}
+                                Accès total (administrateur)
+                                {% else %}
+                                Aucune fonctionnalité assignée
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {{ profile.users | length }}
+                            {% if profile.users | length > 0 %}utilisateurs{% else %}utilisateur{% endif %}
+                        </td>
+                        <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <a href="{{ url_for('users.profiles_view', id=profile.id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir</a>
+                            <a href="{{ url_for('users.profiles_edit', id=profile.id) }}" class="text-indigo-600 hover:text-indigo-900">Modifier fonctionnalités</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Custom Profiles -->
+    <div>
+        <h3 class="text-base font-semibold text-gray-700 mb-3">Profils Personnalisés</h3>
+        {% if custom %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg border-l-4 border-indigo-400">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-3 pl-4 pr-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sm:pl-6">Profil</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fonctionnalités</th>
+                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilisateurs</th>
+                        <th class="relative py-3 pl-3 pr-4 sm:pr-6"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for profile in custom %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-4 pl-4 pr-3 sm:pl-6">
+                            <div class="font-medium text-gray-900">{{ profile.nom }}</div>
+                            {% if profile.description %}
+                            <div class="text-xs text-gray-500 mt-0.5">{{ profile.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm">
+                            <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-700">{{ profile.code }}</code>
+                        </td>
+                        <td class="px-3 py-4 text-sm text-gray-500">
+                            {% if profile.permissions %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for perm in profile.permissions[:3] %}
+                                <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">{{ perm.nom }}</span>
+                                {% endfor %}
+                                {% if profile.permissions|length > 3 %}
+                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500">+{{ profile.permissions|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-gray-400 italic">Aucune fonctionnalité assignée</span>
+                            {% endif %}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {{ profile.users | length }}
+                            {% if profile.users | length > 0 %}utilisateurs{% else %}utilisateur{% endif %}
+                        </td>
+                        <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <a href="{{ url_for('users.profiles_view', id=profile.id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir</a>
+                            <a href="{{ url_for('users.profiles_edit', id=profile.id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Modifier</a>
+                            {% if profile.users | length == 0 %}
+                            <form action="{{ url_for('users.profiles_delete', id=profile.id) }}" method="POST" class="inline"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce profil ?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>
+                            </form>
+                            {% else %}
+                            <span class="text-gray-300 text-xs" title="Des utilisateurs sont assignés à ce profil">Supprimer</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="overflow-hidden bg-white shadow sm:rounded-lg">
+            <div class="px-4 py-10 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-semibold text-gray-900">Aucun profil personnalisé</h3>
+                <p class="mt-1 text-sm text-gray-500">Créez un nouveau profil pour définir des accès spécifiques.</p>
+                <div class="mt-6">
+                    <a href="{{ url_for('users.profiles_create') }}"
+                        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
+                        <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                        </svg>
+                        Créer un profil
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

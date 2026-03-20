@@ -8,4 +8,4 @@ pip install -r requirements.txt
 flask db upgrade
 
 # Initialize default types if needed
-python init_types.py
+flask seed-profiles
