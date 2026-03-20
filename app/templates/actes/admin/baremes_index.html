@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate tracking-tight uppercase">Configuration des Barèmes</h1>
+            <p class="mt-2 text-sm text-gray-700">Gérez les moteurs de calcul dynamiques pour les provisions sur frais et honoraires.</p>
+        </div>
+        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+            <a href="{{ url_for('actes.bareme_admin_new') }}" 
+               class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+               Nouveau Barème
+            </a>
+        </div>
+    </div>
+
+    <div class="mt-8 flex flex-col">
+        <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-bold text-gray-900 sm:pl-6">Code</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-bold text-gray-900">Nom</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-bold text-gray-900">Variables</th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-bold text-gray-900">Statut</th>
+                                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                    <span class="sr-only">Actions</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            {% for bareme in baremes %}
+                            <tr>
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-black text-indigo-600 sm:pl-6">{{ bareme.code }}</td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-700">
+                                    <div class="font-bold">{{ bareme.nom }}</div>
+                                    <div class="text-xs text-gray-500">{{ bareme.description or '' }}</div>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ bareme.variables|length }} entrées / {{ bareme.lignes|length }} règles</td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                    <span class="inline-flex rounded-full px-2 text-xs font-bold leading-5 {% if bareme.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ 'Actif' if bareme.is_active else 'Inactif' }}
+                                    </span>
+                                </td>
+                                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex gap-3 justify-end">
+                                    <a href="{{ url_for('actes.bareme_admin_builder', id=bareme.id) }}" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1 font-bold">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a1 1 0 01-1-1v-3a1 1 0 011-1h1a2 2 0 100-4H4a1 1 0 01-1-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
+                                        Moteur
+                                    </a>
+                                    <a href="{{ url_for('actes.bareme_admin_edit', id=bareme.id) }}" class="text-gray-400 hover:text-gray-600">
+                                        Modifier
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="py-10 text-center text-gray-500 italic">Aucun barème dynamique configuré.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10" x-data="dynamicCalculator()">
+    <div class="md:flex md:items-center md:justify-between mb-8 border-b border-gray-100 pb-6">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate tracking-tight uppercase">
+                Calculateur de Provision : <span class="text-indigo-600">{{ bareme.nom }}</span>
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">Saisissez les paramètres de l'acte pour générer la note de frais.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <!-- Formulaire de Saisie -->
+        <div class="lg:col-span-5 bg-white shadow-xl sm:rounded-2xl overflow-hidden border border-gray-100 p-8">
+            <h3 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Paramètres de l'acte
+            </h3>
+            
+            <form @submit.prevent="calculate()" class="space-y-6">
+                {% for var in bareme.variables %}
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">{{ var.label }}</label>
+                    
+                    {% if var.type_champ == 'MONTANT' or var.type_champ == 'ENTIER' %}
+                    <input type="number" step="any" x-model="inputs.{{ var.code }}" 
+                           class="block w-full rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg font-black text-indigo-900 transition-all shadow-inner"
+                           required="{{ 'true' if var.requis else 'false' }}">
+                    
+                    {% elif var.type_champ == 'BOOLEEN' %}
+                    <div class="flex items-center gap-3 h-12 px-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <input type="checkbox" x-model="inputs.{{ var.code }}" 
+                               class="h-6 w-6 rounded-lg text-indigo-600 border-gray-300 focus:ring-indigo-500 transition-all cursor-pointer">
+                        <span class="text-sm font-bold text-gray-600">OUI</span>
+                    </div>
+
+                    {% elif var.type_champ == 'CHOIX' %}
+                    <select x-model="inputs.{{ var.code }}" 
+                            class="block w-full rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg font-bold">
+                        {% for choice in var.choix_json %}
+                        <option value="{{ choice }}">{{ choice }} %</option>
+                        {% endfor %}
+                    </select>
+
+                    {% elif var.type_champ == 'POURCENTAGE' %}
+                    <div class="relative">
+                        <input type="number" step="0.001" x-model="inputs.{{ var.code }}" 
+                               class="block w-full rounded-xl border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg font-black pr-12">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 font-black text-gray-400">%</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="pt-4">
+                    <button type="submit" :disabled="loading"
+                            class="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-sm font-black uppercase tracking-widest text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-offset-2 transition-all active:scale-[0.98] disabled:opacity-50">
+                        <span x-show="!loading">Calculer la provision</span>
+                        <span x-show="loading">Calcul en cours...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Résultats du Calcul -->
+        <div class="lg:col-span-7">
+            <div x-show="!result && !loading" class="flex flex-col items-center justify-center h-full py-20 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400">
+                <svg class="w-20 h-20 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <p class="font-bold text-center px-10 uppercase tracking-widest text-xs">Veuillez renseigner les paramètres et cliquer sur "Calculer"</p>
+            </div>
+
+            <!-- Loader Skeleton -->
+            <div x-show="loading" class="animate-pulse space-y-6">
+                <div class="h-10 bg-gray-200 rounded-lg w-1/3"></div>
+                <div class="space-y-3">
+                    <div class="h-20 bg-gray-100 rounded-xl"></div>
+                    <div class="h-20 bg-gray-100 rounded-xl"></div>
+                    <div class="h-20 bg-gray-100 rounded-xl"></div>
+                </div>
+            </div>
+
+            <div x-show="result && !loading" 
+                 x-transition:enter="transition ease-out duration-300 transform opacity-0 scale-95"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 class="space-y-6">
+                
+                <!-- Résumé des briques -->
+                <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+                    <div class="px-6 py-4 bg-indigo-600 flex justify-between items-center text-white">
+                        <h4 class="text-xs font-black uppercase tracking-widest">Détail de la Provision</h4>
+                        <span class="text-[10px] font-bold opacity-60">Barème Dynamique v1.0</span>
+                    </div>
+                    <div class="divide-y divide-gray-50">
+                        <template x-for="l in result.lignes" :key="l.code">
+                            <div class="px-6 py-4 flex justify-between items-center hover:bg-gray-50/50 transition-colors">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-black text-gray-800" x-text="l.libelle"></span>
+                                    <span class="text-[9px] font-bold bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded self-start mt-1" x-text="l.code"></span>
+                                </div>
+                                <span class="text-sm font-black text-gray-900" 
+                                      x-text="new Intl.NumberFormat('fr-FR').format(Math.round(l.montant)) + ' FCFA'"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Total Final -->
+                    <div class="bg-indigo-50 px-6 py-6 border-t border-indigo-100 flex flex-col items-end">
+                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total Provisionnel (Arrondi OHADA)</span>
+                        <div class="text-4xl font-black text-indigo-900" 
+                             x-text="new Intl.NumberFormat('fr-FR').format(Math.round(result.total_general)) + ' FCFA'"></div>
+                    </div>
+                </div>
+
+                <!-- Action de Sauvegarde -->
+                <div class="bg-indigo-900 p-8 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
+                    <div class="relative z-10">
+                        <h4 class="text-lg font-black uppercase tracking-tight mb-2">Enregistrer dans un dossier ?</h4>
+                        <p class="text-indigo-200 text-sm mb-6 max-w-md">Créez automatiquement une Note de Provision dans le dossier client de votre choix.</p>
+                        
+                        <div class="flex gap-3">
+                            <select x-model="selectedDossierId" 
+                                    class="flex-1 bg-white/10 border-white/20 rounded-xl text-white placeholder-indigo-300 focus:ring-indigo-500 focus:border-indigo-500 font-bold py-3 px-4">
+                                <option value="" class="text-gray-900">Sélectionner un dossier...</option>
+                                {% for d in dossiers %}
+                                <option value="{{ d.id }}" class="text-gray-900" {% if d.id == selected_dossier_id %}selected{% endif %}>{{ d.numero_dossier }} - {{ d.intitule }}</option>
+                                {% endfor %}
+                            </select>
+                            <button @click="saveToDossier()" 
+                                    class="bg-white text-indigo-900 px-6 py-3 rounded-xl font-black uppercase text-xs hover:bg-indigo-50 transition-all active:scale-95 shadow-lg">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Decorative patterns -->
+                    <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function dynamicCalculator() {
+    return {
+        inputs: {},
+        result: null,
+        loading: false,
+        selectedDossierId: '{{ selected_dossier_id or "" }}',
+
+        init() {
+            // Initialiser les valeurs par défaut
+            {% for var in bareme.variables %}
+                {% if var.type_champ == 'BOOLEEN' %}
+                    this.inputs.{{ var.code }} = {{ 'true' if var.valeur_defaut == 'True' else 'false' }};
+                {% elif var.type_champ in ['MONTANT', 'ENTIER', 'POURCENTAGE', 'CHOIX'] %}
+                    this.inputs.{{ var.code }} = {{ var.valeur_defaut or 0 }};
+                {% else %}
+                    this.inputs.{{ var.code }} = "{{ var.valeur_defaut or '' }}";
+                {% endif %}
+            {% endfor %}
+        },
+
+        async calculate() {
+            this.loading = true;
+            this.result = null;
+            try {
+                const response = await fetch("{{ url_for('actes.bareme_dynamique_calc', code=bareme.code) }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify(this.inputs)
+                });
+                if (response.ok) {
+                    this.result = await response.json();
+                } else {
+                    alert("Erreur lors du calcul.");
+                }
+            } catch (e) {
+                alert("Erreur réseau.");
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async saveToDossier() {
+            if (!this.selectedDossierId) {
+                alert("Veuillez sélectionner un dossier.");
+                return;
+            }
+            try {
+                const response = await fetch("{{ url_for('actes.bareme_dynamique_save', code=bareme.code) }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        dossier_id: this.selectedDossierId,
+                        inputs: this.inputs,
+                        result: this.result
+                    })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    alert("✅ Note de provision enregistrée !");
+                    window.location.href = data.redirect;
+                } else {
+                    alert("Erreur lors de la sauvegarde.");
+                }
+            } catch (e) {
+                alert("Erreur réseau.");
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

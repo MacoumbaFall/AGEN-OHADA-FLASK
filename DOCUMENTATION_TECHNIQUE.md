@@ -10,6 +10,8 @@ L'application est construite sur une architecture **Flask Modulaire (Blueprints)
 - **Backend** : Python 3.12+ / Flask 3.x
 - **Base de Données** : PostgreSQL (Production/Cloud) ou SQLite (Développement/Standalone) via SQLAlchemy 2.x
 - **Migration** : Alembic (via Flask-Migrate) pour le versioning du schéma.
+- **Moteur de Barèmes Dynamique** : Moteur de règles mathématiques stockées en BDD (exécutées de manière isolée via `simpleeval`).
+- **Audit & Traçabilité** : Événements SQLAlchemy autonomes (`app/audit.py`) enregistrant les modifications de champs (old vs new).
 - **Frontend** : Templates Jinja2 enrichis avec TailwindCSS (via CDN ou build local).
 - **Génération Document** : 
     - PDF : `xhtml2pdf` et `xhtml2pdf` (HTML vers PDF).
@@ -131,7 +133,8 @@ flask db upgrade
 ## 🔒 4. Sécurité & Robustesse
 
 - **Verrouillage de Compte** : Désigne un mécanisme automatique qui bloque un utilisateur après 5 tentatives. Seul un Admin peut déverrouiller via `Users > Unlock`.
-- **Logs de Sécurité** : Consultables dans le menu "Administration > Logs de sécurité". Indispensable pour l'audit en cas de litige financier.
+- **Profils et Droits (RBAC Dynamique)** : Gestion granulaire des rôles. Il est possible de créer des "Profils" sur-mesure (ex: "Stage Clerc") en sélectionnant un par un les droits d'accès.
+- **Audit Trail & Logs de Sécurité** : Moteur de tracking SQLAlchemy autonome. Il intercepte tout CRUD et trace de façon immuable l'acteur, la table ciblée, le champ précis modifié (nouvelle valeur vs ancienne), consultables via une interface de filtrage dans "Administration > Logs de sécurité". Indispensable pour l'audit en cas de litige financier.
 - **Rate Limiting** : Protège les formulaires critiques contre les attaques par force brute (5 tentatives/min max).
 
 ---

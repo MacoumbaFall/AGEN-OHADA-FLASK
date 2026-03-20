@@ -24,7 +24,9 @@ Ce menu centralise toutes les opérations métier quotidiennes de l'étude :
 
 ### ⚙️ Menu "Administration" (Administrateurs uniquement)
 *   **Utilisateurs** : Création des comptes clercs/notaires et gestion des permissions.
-*   **Paramètres** : Configuration globale de l'étude (nom, adresse, logo, etc.).
+*   **Profils & Droits** : Créez graphiquement des Profils (Ex: Clerc Débutant) en cochant précisément ce qu'ils ont le droit de faire.
+*   **Logs de Sécurité (Audit Trail)** : Visualisez chaque modification faite dans le logiciel. Gardez la trace absolue sur qui a changé telle donnée et quand (ex: quel prénom a été modifié en quelle valeur).
+*   **Paramètres** : Configuration globale de l'étude (nom, adresse, logo, etc.) et de l'architecture des Barèmes Dynamiques.
 
 ---
 
@@ -79,9 +81,9 @@ Pour la formalisation physique avec les clients :
 
 ---
 
-## 5. Suivi des Formalités
-Évitez les retards et pénalités :
-*   **Calculateur OHADA** : Estimez les frais d'enregistrement sur la base des barèmes en vigueur.
+## 5. Suivi des Formalités et Facturation (Barèmes)
+Évitez les retards, les erreurs de provisions et anticipez les coûts du clerc :
+*   **Moteur de Barème Dynamique (Constructeur OHADA)** : En 2 clics, le moteur évalue vos provisions avec la plus grande justesse mathématique. Mais surtout, le logiciel vous offre un **Constructeur Visuel** où l'Administrateur peut modifier, ajouter, ou forger de nouvelles règles de tarification (nouvelles tranches de %. nouvelles charges, frais fixes) **sans l'aide d'un développeur**.
 *   **Suivi chronologique** : Enregistrez la date de dépôt, la date prévue de retour et suivez le statut avec les différentes administrations (Domaines, Impôts, RCCM).
 
 ---

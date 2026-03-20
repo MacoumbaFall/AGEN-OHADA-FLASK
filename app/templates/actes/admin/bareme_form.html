@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="min-w-0 flex-1">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate tracking-tight uppercase">
+                {{ 'Nouveau Barème' if not bareme else 'Modifier Barème' }}
+            </h2>
+        </div>
+    </div>
+
+    <form method="POST" class="bg-white shadow sm:rounded-xl overflow-hidden border border-gray-100 p-6 space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            <div class="sm:col-span-3">
+                <label for="code" class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Code Unique</label>
+                <div class="mt-1">
+                    <input type="text" name="code" id="code" value="{{ bareme.code if bareme else '' }}"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm uppercase font-black"
+                           placeholder="Ex: VENTE" required>
+                </div>
+            </div>
+
+            <div class="sm:col-span-3">
+                <label for="is_active" class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Statut</label>
+                <div class="mt-1 flex items-center gap-2 h-10">
+                    <input type="checkbox" name="is_active" id="is_active" value="y" 
+                           {% if not bareme or bareme.is_active %}checked{% endif %}
+                           class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="is_active" class="text-sm text-gray-700">Barème Actif</label>
+                </div>
+            </div>
+
+            <div class="sm:col-span-6">
+                <label for="nom" class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Nom du Barème</label>
+                <div class="mt-1">
+                    <input type="text" name="nom" id="nom" value="{{ bareme.nom if bareme else '' }}"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                           placeholder="Ex: Vente Immobilière" required>
+                </div>
+            </div>
+
+            <div class="sm:col-span-6">
+                <label for="description" class="block text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Description / Notes</label>
+                <div class="mt-1">
+                    <textarea id="description" name="description" rows="3" 
+                              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">{{ bareme.description if bareme else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <a href="{{ url_for('actes.bareme_admin_index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Annuler
+            </a>
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Enregistrer
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

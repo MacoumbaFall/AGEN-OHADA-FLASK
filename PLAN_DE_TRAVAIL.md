@@ -340,6 +340,27 @@ Finaliser la documentation et assurer une transition fluide vers l'exploitation 
 
 ---
 
+## Phase 13 : Refonte Dynamique du Moteur de Barèmes (Règles Métier) - ✅ TERMINÉ
+
+### Objectif
+Passer d'un système de calcul de frais "en dur" (un fichier script/HTML par acte) à un **Moteur de Barèmes Dynamique** configurable depuis la base de données (No-Code).
+
+### Tâches (Terminées)
+1.  **Modélisation de la Base de Données (Moteur de Règles)**
+    - [x] Créer `BaremeModele` (ex: "Vente", "Bail").
+    - [x] Créer `BaremeVariable` (Champs de saisie dynamiques : Prix, Superficie...).
+    - [x] Créer `BaremeLigneCalcul` (Tranches, Pourcentages Fixes, Forfaits, TVA, etc.).
+2.  **Moteur Backend Universel**
+    - [x] Développer `DynamicCalculatorEngine` capable d'évaluer les formules et tranches issues de la base de données via `simpleeval`.
+    - [x] Migration vers l'architecture dynamique (Fallback legacy conservé).
+3.  **Constructeur Visuel (Interface d'Administration)**
+    - [x] Interface CRUD pour gérer les Formules et Tranches par type d'acte.
+    - [x] Intégration d'un simulateur interactif (Alpine.js) pour configurer les barèmes.
+4.  **Vue Utilisateur Universelle**
+    - [x] Créer un fichier de template dynamique unique (`bareme_dynamic.html`) qui génère le formulaire et affiche les résultats.
+
+---
+
 ## Conclusion Finale
 L'application **AGEN-OHADA-FLASK** est désormais livrée en version **1.1.0-stable**. L'intégralité des modules métiers (Dossiers, Actes, Formalités, Comptabilité, Barèmes) est fonctionnelle, testée et sécurisée. La plateforme est prête pour une exploitation intensive au sein de l'étude.
 

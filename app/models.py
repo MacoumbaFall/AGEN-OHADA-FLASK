@@ -439,3 +439,52 @@ class ParametreEtude(db.Model):
     def __repr__(self):
         return f'<ParametreEtude {self.cle}={self.valeur}>'
 
+class BaremeModele(db.Model):
+    __tablename__ = 'bareme_modeles'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True) # e.g. 'VENTE'
+    nom: Mapped[str] = mapped_column(String(200), nullable=False) # e.g. "Vente Immobilière"
+    type_acte_id: Mapped[Optional[int]] = mapped_column(ForeignKey('type_actes.id'))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    type_acte = relationship('TypeActe', foreign_keys=[type_acte_id])
+    variables = relationship('BaremeVariable', back_populates='bareme', cascade='all, delete-orphan', order_by='BaremeVariable.ordre')
+    lignes = relationship('BaremeLigneCalcul', back_populates='bareme', cascade='all, delete-orphan', order_by='BaremeLigneCalcul.ordre')
+
+class BaremeVariable(db.Model):
+    __tablename__ = 'bareme_variables'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    bareme_id: Mapped[int] = mapped_column(ForeignKey('bareme_modeles.id', ondelete='CASCADE'), nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., 'prix_vente', 'taux_enreg'
+    label: Mapped[str] = mapped_column(String(200), nullable=False) # e.g., 'Prix de Vente'
+    type_champ: Mapped[str] = mapped_column(String(20), nullable=False, default='MONTANT') # 'MONTANT', 'POURCENTAGE', 'BOOLEEN', 'ENTIER', 'CHOIX'
+    choix_json: Mapped[Optional[dict]] = mapped_column(JSON) # e.g., [1, 5, 10] if type_champ == 'CHOIX'
+    valeur_defaut: Mapped[Optional[str]] = mapped_column(String(200))
+    requis: Mapped[bool] = mapped_column(Boolean, default=True)
+    ordre: Mapped[int] = mapped_column(Integer, default=0)
+    
+    bareme = relationship('BaremeModele', back_populates='variables')
+
+class BaremeLigneCalcul(db.Model):
+    __tablename__ = 'bareme_lignes_calcul'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    bareme_id: Mapped[int] = mapped_column(ForeignKey('bareme_modeles.id', ondelete='CASCADE'), nullable=False)
+    ordre: Mapped[int] = mapped_column(Integer, default=1)
+    code: Mapped[str] = mapped_column(String(50), nullable=False) # e.g. 'HONORAIRES', 'ENREGISTREMENT'
+    libelle: Mapped[str] = mapped_column(String(200), nullable=False) # e.g. 'Droits d\'Enregistrement'
+    
+    type_ligne: Mapped[str] = mapped_column(String(30), nullable=False) # 'TRANCHES', 'POURCENTAGE', 'FORFAIT', 'FORMULE'
+    condition_affichage: Mapped[Optional[str]] = mapped_column(Text) # e.g. "taux_enreg == 1"
+    formule_ou_montant: Mapped[Optional[str]] = mapped_column(Text) # Appliqué selon type_ligne. form: "prix_vente * (taux_enreg/100)", forfait: "150000"
+    tranches_json: Mapped[Optional[dict]] = mapped_column(JSON) # if type_ligne == 'TRANCHES', [{min: 0, max: 3000000, taux: 2.25}, ...]
+    
+    soumis_tva: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    bareme = relationship('BaremeModele', back_populates='lignes')
+
